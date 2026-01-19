@@ -55,12 +55,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 0;
-            opacity: 0.6;
-        }
-
-        .lofi-border {
-            border: 2px solid var(--off-white);
+            z-index: 5; /* Increased so pixels can draw over the logo */
+            opacity: 1;
+            pointer-events: none;
         }
 
         .scanline {
@@ -71,6 +68,7 @@
             position: absolute;
             bottom: 0;
             animation: scan 8s linear infinite;
+            pointer-events: none;
         }
 
         @keyframes scan {
@@ -151,11 +149,22 @@
             justify-content: center;
             cursor: pointer;
         }
+
+        /* Reveal Logo Styling */
+        .reveal-logo {
+            max-width: 400px;
+            width: 80%;
+            filter: brightness(0.15); /* Keep it very dark so the green pixels reveal it */
+            opacity: 0.8;
+            user-select: none;
+            pointer-events: none;
+            z-index: 1;
+        }
     </style>
 </head>
 <body class="antialiased">
 
-    <div class="fixed inset-0 pointer-events-none">
+    <div class="fixed inset-0 pointer-events-none z-10">
         <canvas id="pixelCanvas"></canvas>
         <div class="scanline"></div>
     </div>
@@ -179,22 +188,15 @@
         </div>
     </div>
 
-    <main class="relative z-10">
+    <main class="relative z-20">
         <!-- HOME VIEW -->
         <section id="home-view" class="view-section active">
             <div class="min-h-[70vh] flex flex-col items-center justify-center px-6 text-center">
-                <div class="mb-4 text-emerald-500 text-sm animate-pulse flex items-center gap-2">
-                    <span class="block w-2 h-2 rounded-full bg-emerald-500"></span>
-                    ON AIR: THE LATE NIGHT SHIFT
-                </div>
                 
-                <div class="lofi-border p-12 bg-black/40 backdrop-blur-xl max-w-lg text-center">
-                    <p class="text-sm leading-relaxed mb-8 font-bold uppercase tracking-tight">
-                        Bogadh [Moving] is a biweekly radio frequency broadcasting from New York City. Bridging the Gap.
-                    </p>
-                    <button onclick="window.open('https://newtownradio.com/', '_blank')" class="w-full bg-[#009a44] text-black py-4 font-bold uppercase tracking-widest hover:bg-white transition-all text-sm">
-                        LISTEN LIVE / TÉIGH BEO
-                    </button>
+                <!-- The Logo Reveal Area -->
+                <div class="relative flex items-center justify-center py-20">
+                    <!-- Path updated for GitHub repository structure (images folder) -->
+                    <img src="images/logo-trans.jpg" alt="BOGADH Logo" class="reveal-logo" onerror="this.style.display='none'; console.log('Logo image not found in images/ folder.')">
                 </div>
 
                 <div class="mt-12 flex gap-12 text-[10px] uppercase opacity-40 font-bold tracking-widest">
@@ -289,7 +291,7 @@
         </div>
     </div>
 
-    <footer class="p-10 border-t border-white/10 text-[10px] text-center opacity-40 uppercase tracking-[0.3em] relative z-20">
+    <footer class="p-10 border-t border-white/10 text-[10px] text-center opacity-40 uppercase tracking-[0.3em] relative z-30">
         Bogadh Radio © 2026 • Brooklyn • Dublin • Moving Together
     </footer>
 
@@ -316,22 +318,18 @@
         let tickerPos = 0;
         let isDraggingTicker = false;
         let startX = 0;
-        let baseSpeed = 1.5; // Pixels per frame
+        let baseSpeed = 1.5; 
         
-        // Loop content for seamless scrolling
         marqueeContent.innerHTML += " " + marqueeContent.innerHTML;
 
         function updateTicker() {
             if (!isDraggingTicker) {
                 tickerPos -= baseSpeed;
-                
-                // Reset position for seamless loop
                 const contentWidth = marqueeContent.offsetWidth / 2;
                 if (Math.abs(tickerPos) >= contentWidth) {
                     tickerPos = 0;
                 }
             }
-            
             marqueeContent.style.transform = `translateX(${tickerPos}px)`;
             requestAnimationFrame(updateTicker);
         }
@@ -357,38 +355,31 @@
             }
         });
 
-        // Start Ticker
         requestAnimationFrame(updateTicker);
 
         // --- Radio Automation Logic ---
         function updateRadioStatus() {
             const statusEl = document.getElementById('playerStatus');
             const indicatorEl = document.getElementById('liveIndicator');
-
             const now = new Date();
             const nycString = now.toLocaleString("en-US", {timeZone: "America/New_York"});
             const nycTime = new Date(nycString);
-
             const anchorDate = new Date("2026-01-13T18:00:00-05:00"); 
             const msInWeek = 7 * 24 * 60 * 60 * 1000;
 
             function getNextShowTime(currentTime) {
                 let target = new Date(currentTime);
                 target.setHours(18, 0, 0, 0);
-                
                 while (target.getDay() !== 2) {
                     target.setDate(target.getDate() + 1);
                 }
-
                 const weeksSinceAnchor = Math.floor((target - anchorDate) / msInWeek);
                 if (weeksSinceAnchor % 2 !== 0) {
                     target.setDate(target.getDate() + 7);
                 }
-                
                 if (currentTime.getDay() === 2 && currentTime.getHours() >= 20) {
                     target.setDate(target.getDate() + 14);
                 }
-
                 return target;
             }
 
@@ -427,11 +418,15 @@
             statusEl.classList.remove('text-emerald-500');
         }
 
-        // --- Background Pixels (Magnetic Follow Effect) ---
+        // --- Redesigned Background Pixels ---
         const canvas = document.getElementById('pixelCanvas');
         const ctx = canvas.getContext('2d');
         let width, height, rows, cols, pixels = [];
-        const cellSize = 50;
+        
+        const cellSize = 12; 
+        const interactionRadius = 250; 
+        const baseAlphaValue = 0.02; 
+        
         let mouse = { x: -1000, y: -1000 };
 
         function init() {
@@ -445,10 +440,13 @@
             for (let y = 0; y < rows; y++) {
                 for (let x = 0; x < cols; x++) {
                     pixels.push({
-                        x: x * cellSize, y: y * cellSize,
-                        offsetX: 0, offsetY: 0,
-                        targetOffsetX: 0, targetOffsetY: 0,
-                        baseAlpha: Math.random() * 0.15,
+                        x: x * cellSize, 
+                        y: y * cellSize,
+                        offsetX: 0, 
+                        offsetY: 0,
+                        targetOffsetX: 0, 
+                        targetOffsetY: 0,
+                        baseAlpha: Math.random() * baseAlphaValue,
                         alpha: 0, 
                         targetAlpha: 0,
                         frequency: 0.0005 + Math.random() * 0.001,
@@ -471,34 +469,29 @@
                 
                 const shimmer = Math.sin(now * p.frequency + p.offset);
                 
-                if (dist < 400) {
-                    const force = (1 - dist / 400);
-                    // Brighter alpha when near mouse
-                    p.targetAlpha = p.baseAlpha + (force * 0.6);
-                    // Magnetic pull: move slightly toward mouse
-                    p.targetOffsetX = dx * force * 0.2;
-                    p.targetOffsetY = dy * force * 0.2;
+                if (dist < interactionRadius) {
+                    const force = (1 - dist / interactionRadius);
+                    p.targetAlpha = p.baseAlpha + (Math.pow(force, 2) * 0.85); 
+                    p.targetOffsetX = dx * force * 0.15; 
+                    p.targetOffsetY = dy * force * 0.15;
                 } else {
-                    p.targetAlpha = p.baseAlpha + (shimmer * 0.05);
+                    p.targetAlpha = p.baseAlpha + (shimmer * 0.02);
                     p.targetOffsetX = 0;
                     p.targetOffsetY = 0;
                 }
 
-                // Smooth transitions
-                p.alpha += (p.targetAlpha - p.alpha) * 0.1;
+                p.alpha += (p.targetAlpha - p.alpha) * 0.08;
                 p.offsetX += (p.targetOffsetX - p.offsetX) * 0.1;
                 p.offsetY += (p.targetOffsetY - p.offsetY) * 0.1;
 
-                if (p.alpha > 0.01) {
+                if (p.alpha > 0.005) {
                     ctx.fillStyle = `rgba(0, 154, 68, ${p.alpha})`;
-                    const sizeMod = Math.sin(now * 0.001 + p.offset) * 2;
-                    
-                    // Apply offsets to create the "following" movement
+                    const sizePadding = 2;
                     ctx.fillRect(
-                        p.x + 2 + p.offsetX, 
-                        p.y + 2 + p.offsetY, 
-                        cellSize - 4 + sizeMod, 
-                        cellSize - 4 + sizeMod
+                        p.x + sizePadding + p.offsetX, 
+                        p.y + sizePadding + p.offsetY, 
+                        cellSize - (sizePadding * 2), 
+                        cellSize - (sizePadding * 2)
                     );
                 }
             });
