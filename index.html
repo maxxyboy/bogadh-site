@@ -55,9 +55,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 5; /* Increased so pixels can draw over the logo */
+            z-index: 5; 
             opacity: 1;
             pointer-events: none;
+        }
+
+        /* Lofi Box Styling */
+        .lofi-border {
+            border: 2px solid var(--off-white);
         }
 
         .scanline {
@@ -149,17 +154,6 @@
             justify-content: center;
             cursor: pointer;
         }
-
-        /* Reveal Logo Styling */
-        .reveal-logo {
-            max-width: 400px;
-            width: 80%;
-            filter: brightness(0.15); /* Keep it very dark so the green pixels reveal it */
-            opacity: 0.8;
-            user-select: none;
-            pointer-events: none;
-            z-index: 1;
-        }
     </style>
 </head>
 <body class="antialiased">
@@ -169,19 +163,22 @@
         <div class="scanline"></div>
     </div>
 
-    <!-- Navigation -->
-    <nav class="relative z-50 flex justify-between items-center p-6 border-b border-white/10 bg-black/50 backdrop-blur-sm">
-        <div class="flex items-center gap-4 cursor-pointer" onclick="switchView('home')">
+   <nav class="relative z-50 flex justify-between items-center p-6 border-b border-white/10 bg-black/50 backdrop-blur-sm">
+        <div class="flex items-center gap-4 cursor-pointer relative z-10" onclick="switchView('home')">
             <div class="w-10 h-10 bg-[#009a44] flex items-center justify-center font-bold text-black text-xl">B</div>
             <span class="text-xl font-bold tracking-tighter">BOGADH <span class="text-xs ml-2 opacity-50 hidden md:inline">NYC / DUBLIN</span></span>
         </div>
-        <div class="flex gap-6 text-xs uppercase tracking-widest font-bold">
+
+        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+            <img src="images/trans-logo-white.png" alt="Bogadh Logo" class="h-24">
+        </div>
+
+        <div class="flex gap-6 text-xs uppercase tracking-widest font-bold relative z-10">
             <button onclick="switchView('archive')" class="hover:text-[#009a44] transition-colors">Archive</button>
             <button onclick="switchView('home')" class="hover:text-[#009a44] transition-colors">Schedule</button>
         </div>
     </nav>
 
-    <!-- Interactive Ticker Banner -->
     <div class="marquee-container" id="marqueeContainer">
         <div class="marquee-content" id="marqueeContent">
             LIVE ON NEWTOWN RADIO: BOGADH WITH MAX REBO • CEOL AGUS CULTÚR • EVERY SECOND TUESDAY 18:00-20:00 EST • UPCOMING: ??? • 
@@ -189,17 +186,24 @@
     </div>
 
     <main class="relative z-20">
-        <!-- HOME VIEW -->
         <section id="home-view" class="view-section active">
             <div class="min-h-[70vh] flex flex-col items-center justify-center px-6 text-center">
                 
-                <!-- The Logo Reveal Area -->
-                <div class="relative flex items-center justify-center py-20">
-                    <!-- Path updated for GitHub repository structure (images folder) -->
-                    <img src="images/logo-trans.png" alt="BOGADH Logo" class="reveal-logo" onerror="this.style.display='none'; console.log('Logo image not found in images/ folder.')">
+                <div class="mb-4 text-emerald-500 text-sm animate-pulse flex items-center gap-2 relative z-30">
+                    <span class="block w-2 h-2 rounded-full bg-emerald-500"></span>
+                    ON AIR: THE LATE NIGHT SHIFT
+                </div>
+                
+                <div class="lofi-border p-12 bg-black/40 backdrop-blur-xl max-w-lg text-center relative z-30">
+                    <p class="text-sm leading-relaxed mb-8 font-bold uppercase tracking-tight">
+                        Bogadh [Moving] is a biweekly radio frequency broadcasting from New York City. Bridging the Gap.
+                    </p>
+                    <button onclick="window.open('https://newtownradio.com/', '_blank')" class="w-full bg-[#009a44] text-black py-4 font-bold uppercase tracking-widest hover:bg-white transition-all text-sm">
+                        LISTEN LIVE / TÉIGH BEO
+                    </button>
                 </div>
 
-                <div class="mt-12 flex gap-12 text-[10px] uppercase opacity-40 font-bold tracking-widest">
+                <div class="mt-12 flex gap-12 text-[10px] uppercase opacity-40 font-bold tracking-widest relative z-30">
                     <div>BGDH-NYC</div>
                     <div>98.4 DIGITAL</div>
                     <div>BROOKLYN, NY</div>
@@ -227,7 +231,6 @@
             </section>
         </section>
 
-        <!-- ARCHIVE VIEW -->
         <section id="archive-view" class="view-section py-20 px-6 max-w-7xl mx-auto">
             <div class="mb-12 flex flex-col md:flex-row justify-between items-end gap-8">
                 <div>
@@ -268,7 +271,6 @@
         </section>
     </main>
 
-    <!-- Player Bar -->
     <div class="player-bar cursor-pointer" onclick="window.open('https://newtownradio.com/', '_blank')">
         <div class="play-btn">
             <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M4.5 3.5v13l11-6.5-11-6.5z"/></svg>
@@ -408,17 +410,17 @@
             }
         }
 
-        setInterval(updateRadioStatus, 1000);
-        updateRadioStatus();
+            setInterval(updateRadioStatus, 1000);
+            updateRadioStatus();
 
-        function playArchive(artist, showId) {
-            const statusEl = document.getElementById('playerStatus');
-            statusEl.innerText = artist;
-            document.getElementById('playerShow').innerText = showId;
-            statusEl.classList.remove('text-emerald-500');
-        }
+            function playArchive(artist, showId) {
+                const statusEl = document.getElementById('playerStatus');
+                statusEl.innerText = artist;
+                document.getElementById('playerShow').innerText = showId;
+                statusEl.classList.remove('text-emerald-500');
+            }
 
-        // --- Redesigned Background Pixels ---
+        // --- High Density Background Pixels (Original Engine) ---
         const canvas = document.getElementById('pixelCanvas');
         const ctx = canvas.getContext('2d');
         let width, height, rows, cols, pixels = [];
