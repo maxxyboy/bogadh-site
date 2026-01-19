@@ -169,7 +169,7 @@
             <span class="text-xl font-bold tracking-tighter">BOGADH <span class="text-xs ml-2 opacity-50 hidden md:inline">NYC / DUBLIN</span></span>
         </div>
 
-        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+        <div class="absolute left-1/2 top-1/2 -translate-x-[65%] -translate-y-1/2 pointer-events-none">
             <img src="images/trans-logo-white.png" alt="Bogadh Logo" class="h-24">
         </div>
 
@@ -189,9 +189,9 @@
         <section id="home-view" class="view-section active">
             <div class="min-h-[70vh] flex flex-col items-center justify-center px-6 text-center">
                 
-                <div class="mb-4 text-emerald-500 text-sm animate-pulse flex items-center gap-2 relative z-30">
-                    <span class="block w-2 h-2 rounded-full bg-emerald-500"></span>
-                    ON AIR: THE LATE NIGHT SHIFT
+                <div class="mb-4 text-emerald-500 text-sm flex items-center gap-2 relative z-30 font-bold uppercase tracking-widest">
+                    <span id="headerIndicator" class="w-2 h-2 rounded-full bg-emerald-500 hidden animate-pulse"></span>
+                    <span id="headerStatus">Checking Status...</span>
                 </div>
                 
                 <div class="lofi-border p-12 bg-black/40 backdrop-blur-xl max-w-lg text-center relative z-30">
@@ -361,12 +361,16 @@
 
         // --- Radio Automation Logic ---
         function updateRadioStatus() {
+            // Select all elements that need updating
             const statusEl = document.getElementById('playerStatus');
+            const headerStatusEl = document.getElementById('headerStatus');
             const indicatorEl = document.getElementById('liveIndicator');
+            const headerIndicatorEl = document.getElementById('headerIndicator');
+            
             const now = new Date();
             const nycString = now.toLocaleString("en-US", {timeZone: "America/New_York"});
             const nycTime = new Date(nycString);
-            const anchorDate = new Date("2026-01-13T18:00:00-05:00"); 
+            const anchorDate = new Date("2026-01-13T18:00:00-05:00");
             const msInWeek = 7 * 24 * 60 * 60 * 1000;
 
             function getNextShowTime(currentTime) {
@@ -392,21 +396,33 @@
             const isLiveTime = nycTime.getHours() >= 18 && nycTime.getHours() < 20;
 
             if (isTuesday && isOnWeek && isLiveTime) {
-                statusEl.innerText = "Live Now on Newtown Radio";
+                const liveText = "Live Now on Newtown Radio";
+                
+                // Update Footer
+                statusEl.innerText = liveText;
                 statusEl.classList.add('text-emerald-500');
-                indicatorEl.classList.remove('hidden');
-                indicatorEl.classList.add('flex');
+                indicatorEl.classList.replace('hidden', 'flex');
+                
+                // Update Header
+                headerStatusEl.innerText = "ON AIR: LIVE FROM BROOKLYN";
+                headerIndicatorEl.classList.remove('hidden');
+                
             } else {
                 const diff = nextShow - nycTime;
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
                 const mins = Math.floor((diff / (1000 * 60)) % 60);
                 const secs = Math.floor((diff / 1000) % 60);
+                const timeString = `${days}d ${hours}h ${mins}m ${secs}s`;
 
-                statusEl.innerText = `Next Live in: ${days}d ${hours}h ${mins}m ${secs}s`;
+                // Update Footer
+                statusEl.innerText = `Next Live in: ${timeString}`;
                 statusEl.classList.remove('text-emerald-500');
-                indicatorEl.classList.add('hidden');
-                indicatorEl.classList.remove('flex');
+                indicatorEl.classList.replace('flex', 'hidden');
+
+                // Update Header
+                headerStatusEl.innerText = `Next Broadcast: ${timeString}`;
+                headerIndicatorEl.classList.add('hidden');
             }
         }
 
