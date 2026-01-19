@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOGADH | Irish Radio NYC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --irish-green: #009a44;
+            --off-white: #f5f5f5;
+            --studio-black: #0c0c0c;
+        }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            background-color: var(--studio-black);
+            color: var(--off-white);
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        }
+
+        .marquee-container {
+            background: var(--irish-green);
+            color: black;
+            font-weight: 700;
+            overflow: hidden;
+            white-space: nowrap;
+            padding: 10px 0;
+            border-top: 2px solid black;
+            border-bottom: 2px solid black;
+            cursor: grab;
+            user-select: none;
+            position: relative;
+            z-index: 60;
+        }
+
+        .marquee-container:active {
+            cursor: grabbing;
+        }
+
+        .marquee-content {
+            display: inline-block;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            will-change: transform;
+        }
+
+        canvas#pixelCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.6;
+        }
+
+        .lofi-border {
+            border: 2px solid var(--off-white);
+        }
+
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 10;
+            background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(255,255,255,0.02) 50%, rgba(0,0,0,0) 100%);
+            position: absolute;
+            bottom: 0;
+            animation: scan 8s linear infinite;
+        }
+
+        @keyframes scan {
+            from { bottom: 100%; }
+            to { bottom: -10%; }
+        }
+
+        .view-section {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        .archive-list-row {
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 0;
+            font-size: 13px;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: background 0.2s ease;
+            cursor: pointer;
+        }
+
+        .archive-list-row:hover {
+            background: var(--irish-green);
+            color: black;
+            border-bottom-color: black;
+        }
+
+        .archive-header {
+            display: flex;
+            font-size: 10px;
+            opacity: 0.4;
+            padding-bottom: 8px;
+            border-bottom: 2px solid white;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .col-date { width: 15%; }
+        .col-artist { width: 50%; }
+        .col-id { width: 15%; }
+        .col-play { width: 20%; text-align: right; }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .player-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background: #111;
+            border-top: 2px solid var(--irish-green);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 20px;
+        }
+
+        .play-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--irish-green);
+            color: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="fixed inset-0 pointer-events-none">
+        <canvas id="pixelCanvas"></canvas>
+        <div class="scanline"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="relative z-50 flex justify-between items-center p-6 border-b border-white/10 bg-black/50 backdrop-blur-sm">
+        <div class="flex items-center gap-4 cursor-pointer" onclick="switchView('home')">
+            <div class="w-10 h-10 bg-[#009a44] flex items-center justify-center font-bold text-black text-xl">B</div>
+            <span class="text-xl font-bold tracking-tighter">BOGADH <span class="text-xs ml-2 opacity-50 hidden md:inline">NYC / DUBLIN</span></span>
+        </div>
+        <div class="flex gap-6 text-xs uppercase tracking-widest font-bold">
+            <button onclick="switchView('archive')" class="hover:text-[#009a44] transition-colors">Archive</button>
+            <button onclick="switchView('home')" class="hover:text-[#009a44] transition-colors">Schedule</button>
+        </div>
+    </nav>
+
+    <!-- Interactive Ticker Banner -->
+    <div class="marquee-container" id="marqueeContainer">
+        <div class="marquee-content" id="marqueeContent">
+            LIVE ON NEWTOWN RADIO: BOGADH WITH MAX REBO • CEOL AGUS CULTÚR • EVERY SECOND TUESDAY 18:00-20:00 EST • UPCOMING: ??? • 
+        </div>
+    </div>
+
+    <main class="relative z-10">
+        <!-- HOME VIEW -->
+        <section id="home-view" class="view-section active">
+            <div class="min-h-[70vh] flex flex-col items-center justify-center px-6 text-center">
+                <div class="mb-4 text-emerald-500 text-sm animate-pulse flex items-center gap-2">
+                    <span class="block w-2 h-2 rounded-full bg-emerald-500"></span>
+                    ON AIR: THE LATE NIGHT SHIFT
+                </div>
+                
+                <div class="lofi-border p-12 bg-black/40 backdrop-blur-xl max-w-lg text-center">
+                    <p class="text-sm leading-relaxed mb-8 font-bold uppercase tracking-tight">
+                        Bogadh [Moving] is a biweekly radio frequency broadcasting from New York City. Bridging the Gap.
+                    </p>
+                    <button onclick="window.open('https://newtownradio.com/', '_blank')" class="w-full bg-[#009a44] text-black py-4 font-bold uppercase tracking-widest hover:bg-white transition-all text-sm">
+                        LISTEN LIVE / TÉIGH BEO
+                    </button>
+                </div>
+
+                <div class="mt-12 flex gap-12 text-[10px] uppercase opacity-40 font-bold tracking-widest">
+                    <div>BGDH-NYC</div>
+                    <div>98.4 DIGITAL</div>
+                    <div>BROOKLYN, NY</div>
+                </div>
+            </div>
+
+            <section class="max-w-6xl mx-auto px-6 py-20 border-t border-white/10">
+                <h2 class="text-2xl font-black italic mb-12 uppercase tracking-tight">Upcoming Broadcasts</h2>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center p-4 border border-white/5 hover:border-[#009a44] transition-all cursor-pointer text-xs uppercase font-bold">
+                        <div class="flex gap-8 items-center">
+                            <span class="text-emerald-500 w-16">JAN 27</span>
+                            <span>???</span>
+                        </div>
+                        <span class="opacity-40">18:00 — 20:00 EST</span>
+                    </div>
+                    <div class="flex justify-between items-center p-4 border border-white/5 hover:border-[#009a44] transition-all cursor-pointer text-xs uppercase font-bold">
+                        <div class="flex gap-8 items-center">
+                            <span class="text-emerald-500 w-16">FEB 10</span>
+                            <span>???</span>
+                        </div>
+                        <span class="opacity-40">18:00 — 20:00 EST</span>
+                    </div>
+                </div>
+            </section>
+        </section>
+
+        <!-- ARCHIVE VIEW -->
+        <section id="archive-view" class="view-section py-20 px-6 max-w-7xl mx-auto">
+            <div class="mb-12 flex flex-col md:flex-row justify-between items-end gap-8">
+                <div>
+                    <h1 class="text-5xl font-black uppercase tracking-tighter">ARCHIVE</h1>
+                    <p class="text-emerald-500 font-bold text-[10px] mt-2 uppercase tracking-widest">Broadcast History / Cartlann</p>
+                </div>
+                <div class="w-full md:w-96">
+                    <input type="text" placeholder="Search Artists..." class="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-[#009a44] transition-colors uppercase text-xs font-bold tracking-widest">
+                </div>
+            </div>
+
+            <div class="mt-8">
+                <div class="archive-header px-2">
+                    <div class="col-date">Date</div>
+                    <div class="col-artist">Artist / Show</div>
+                    <div class="col-id">ID</div>
+                    <div class="col-play">Listen</div>
+                </div>
+                <div class="archive-list-row px-2" onclick="playArchive('Seán Óg', 'BGDH.042')">
+                    <div class="col-date">17.03.25</div>
+                    <div class="col-artist">Seán Óg - St. Patrick's Day Special</div>
+                    <div class="col-id">BGDH.042</div>
+                    <div class="col-play">PLAY ➔</div>
+                </div>
+                <div class="archive-list-row px-2" onclick="playArchive('Eisirt', 'BGDH.041')">
+                    <div class="col-date">03.03.25</div>
+                    <div class="col-artist">Eisirt - Industrial Drone</div>
+                    <div class="col-id">BGDH.041</div>
+                    <div class="col-play">PLAY ➔</div>
+                </div>
+                <div class="archive-list-row px-2" onclick="playArchive('Ciara B2B Naoise', 'BGDH.040')">
+                    <div class="col-date">18.02.25</div>
+                    <div class="col-artist">Ciara B2B Naoise - House Session</div>
+                    <div class="col-id">BGDH.040</div>
+                    <div class="col-play">PLAY ➔</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Player Bar -->
+    <div class="player-bar cursor-pointer" onclick="window.open('https://newtownradio.com/', '_blank')">
+        <div class="play-btn">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M4.5 3.5v13l11-6.5-11-6.5z"/></svg>
+        </div>
+        <div class="flex flex-col">
+            <span id="playerStatus" class="text-xs font-bold uppercase tracking-widest text-emerald-500">
+                Checking Status...
+            </span>
+            <span id="playerShow" class="text-[10px] opacity-50 uppercase">
+                Bogadh with Max Rebo
+            </span>
+        </div>
+        <div id="liveIndicator" class="ml-auto hidden items-center gap-4">
+            <div class="flex gap-1 h-4 items-end">
+                <div class="w-1 bg-emerald-500 animate-[bounce_1s_infinite]"></div>
+                <div class="w-1 bg-emerald-500 animate-[bounce_1.2s_infinite]"></div>
+                <div class="w-1 bg-emerald-500 animate-[bounce_0.8s_infinite]"></div>
+            </div>
+            <span class="text-[10px] font-bold">LIVE</span>
+        </div>
+    </div>
+
+    <footer class="p-10 border-t border-white/10 text-[10px] text-center opacity-40 uppercase tracking-[0.3em] relative z-20">
+        Bogadh Radio © 2026 • Brooklyn • Dublin • Moving Together
+    </footer>
+
+    <script>
+        // --- View Management ---
+        function switchView(viewId) {
+            document.querySelectorAll('.view-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(viewId + '-view').classList.add('active');
+            window.scrollTo(0,0);
+            history.pushState(null, null, viewId === 'home' ? '#' : '#' + viewId);
+        }
+
+        window.onpopstate = () => {
+            const hash = window.location.hash.replace('#', '');
+            switchView(hash || 'home');
+        };
+
+        // --- Interactive Ticker Engine ---
+        const marqueeContainer = document.getElementById('marqueeContainer');
+        const marqueeContent = document.getElementById('marqueeContent');
+        
+        let tickerPos = 0;
+        let isDraggingTicker = false;
+        let startX = 0;
+        let baseSpeed = 1.5; // Pixels per frame
+        
+        // Loop content for seamless scrolling
+        marqueeContent.innerHTML += " " + marqueeContent.innerHTML;
+
+        function updateTicker() {
+            if (!isDraggingTicker) {
+                tickerPos -= baseSpeed;
+                
+                // Reset position for seamless loop
+                const contentWidth = marqueeContent.offsetWidth / 2;
+                if (Math.abs(tickerPos) >= contentWidth) {
+                    tickerPos = 0;
+                }
+            }
+            
+            marqueeContent.style.transform = `translateX(${tickerPos}px)`;
+            requestAnimationFrame(updateTicker);
+        }
+
+        marqueeContainer.addEventListener('mousedown', (e) => {
+            isDraggingTicker = true;
+            startX = e.clientX;
+            marqueeContainer.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDraggingTicker) {
+                const dx = e.clientX - startX;
+                tickerPos += dx;
+                startX = e.clientX;
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isDraggingTicker) {
+                isDraggingTicker = false;
+                marqueeContainer.style.cursor = 'grab';
+            }
+        });
+
+        // Start Ticker
+        requestAnimationFrame(updateTicker);
+
+        // --- Radio Automation Logic ---
+        function updateRadioStatus() {
+            const statusEl = document.getElementById('playerStatus');
+            const indicatorEl = document.getElementById('liveIndicator');
+
+            const now = new Date();
+            const nycString = now.toLocaleString("en-US", {timeZone: "America/New_York"});
+            const nycTime = new Date(nycString);
+
+            const anchorDate = new Date("2026-01-13T18:00:00-05:00"); 
+            const msInWeek = 7 * 24 * 60 * 60 * 1000;
+
+            function getNextShowTime(currentTime) {
+                let target = new Date(currentTime);
+                target.setHours(18, 0, 0, 0);
+                
+                while (target.getDay() !== 2) {
+                    target.setDate(target.getDate() + 1);
+                }
+
+                const weeksSinceAnchor = Math.floor((target - anchorDate) / msInWeek);
+                if (weeksSinceAnchor % 2 !== 0) {
+                    target.setDate(target.getDate() + 7);
+                }
+                
+                if (currentTime.getDay() === 2 && currentTime.getHours() >= 20) {
+                    target.setDate(target.getDate() + 14);
+                }
+
+                return target;
+            }
+
+            const nextShow = getNextShowTime(nycTime);
+            const isTuesday = nycTime.getDay() === 2;
+            const weeksSinceAnchorNow = Math.floor((nycTime - anchorDate) / msInWeek);
+            const isOnWeek = weeksSinceAnchorNow % 2 === 0;
+            const isLiveTime = nycTime.getHours() >= 18 && nycTime.getHours() < 20;
+
+            if (isTuesday && isOnWeek && isLiveTime) {
+                statusEl.innerText = "Live Now on Newtown Radio";
+                statusEl.classList.add('text-emerald-500');
+                indicatorEl.classList.remove('hidden');
+                indicatorEl.classList.add('flex');
+            } else {
+                const diff = nextShow - nycTime;
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                const mins = Math.floor((diff / (1000 * 60)) % 60);
+                const secs = Math.floor((diff / 1000) % 60);
+
+                statusEl.innerText = `Next Live in: ${days}d ${hours}h ${mins}m ${secs}s`;
+                statusEl.classList.remove('text-emerald-500');
+                indicatorEl.classList.add('hidden');
+                indicatorEl.classList.remove('flex');
+            }
+        }
+
+        setInterval(updateRadioStatus, 1000);
+        updateRadioStatus();
+
+        function playArchive(artist, showId) {
+            const statusEl = document.getElementById('playerStatus');
+            statusEl.innerText = artist;
+            document.getElementById('playerShow').innerText = showId;
+            statusEl.classList.remove('text-emerald-500');
+        }
+
+        // --- Background Pixels (Magnetic Follow Effect) ---
+        const canvas = document.getElementById('pixelCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, rows, cols, pixels = [];
+        const cellSize = 50;
+        let mouse = { x: -1000, y: -1000 };
+
+        function init() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            cols = Math.ceil(width / cellSize);
+            rows = Math.ceil(height / cellSize);
+            pixels = [];
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    pixels.push({
+                        x: x * cellSize, y: y * cellSize,
+                        offsetX: 0, offsetY: 0,
+                        targetOffsetX: 0, targetOffsetY: 0,
+                        baseAlpha: Math.random() * 0.15,
+                        alpha: 0, 
+                        targetAlpha: 0,
+                        frequency: 0.0005 + Math.random() * 0.001,
+                        offset: Math.random() * 1000
+                    });
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            const now = Date.now();
+            
+            pixels.forEach(p => {
+                const centerX = p.x + cellSize / 2;
+                const centerY = p.y + cellSize / 2;
+                const dx = mouse.x - centerX;
+                const dy = mouse.y - centerY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                const shimmer = Math.sin(now * p.frequency + p.offset);
+                
+                if (dist < 400) {
+                    const force = (1 - dist / 400);
+                    // Brighter alpha when near mouse
+                    p.targetAlpha = p.baseAlpha + (force * 0.6);
+                    // Magnetic pull: move slightly toward mouse
+                    p.targetOffsetX = dx * force * 0.2;
+                    p.targetOffsetY = dy * force * 0.2;
+                } else {
+                    p.targetAlpha = p.baseAlpha + (shimmer * 0.05);
+                    p.targetOffsetX = 0;
+                    p.targetOffsetY = 0;
+                }
+
+                // Smooth transitions
+                p.alpha += (p.targetAlpha - p.alpha) * 0.1;
+                p.offsetX += (p.targetOffsetX - p.offsetX) * 0.1;
+                p.offsetY += (p.targetOffsetY - p.offsetY) * 0.1;
+
+                if (p.alpha > 0.01) {
+                    ctx.fillStyle = `rgba(0, 154, 68, ${p.alpha})`;
+                    const sizeMod = Math.sin(now * 0.001 + p.offset) * 2;
+                    
+                    // Apply offsets to create the "following" movement
+                    ctx.fillRect(
+                        p.x + 2 + p.offsetX, 
+                        p.y + 2 + p.offsetY, 
+                        cellSize - 4 + sizeMod, 
+                        cellSize - 4 + sizeMod
+                    );
+                }
+            });
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('mousemove', (e) => { 
+            mouse.x = e.clientX; 
+            mouse.y = e.clientY; 
+        });
+        
+        window.addEventListener('resize', init);
+        window.onload = () => { init(); draw(); };
+    </script>
+</body>
+</html>
