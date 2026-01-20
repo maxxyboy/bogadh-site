@@ -169,7 +169,7 @@
             <span class="text-xl font-bold tracking-tighter">BOGADH <span class="text-xs ml-2 opacity-50 hidden md:inline">NYC / DUBLIN</span></span>
         </div>
 
-        <div class="absolute left-1/2 top-1/2 -translate-x-[65%] -translate-y-1/2 pointer-events-none">
+        <div class="hidden md:block absolute left-1/2 top-1/2 -translate-x-[65%] -translate-y-1/2 pointer-events-none">
             <img src="images/trans-logo-white.png" alt="Bogadh Logo" class="h-24">
         </div>
 
@@ -205,7 +205,7 @@
 
                 <div class="mt-12 flex gap-12 text-[10px] uppercase opacity-40 font-bold tracking-widest relative z-30">
                     <div>BGDH-NYC</div>
-                    <div>NEWTOWN RADIO</div>
+                    <div>98.4 DIGITAL</div>
                     <div>BROOKLYN, NY</div>
                 </div>
             </div>
@@ -216,14 +216,14 @@
                     <div class="flex justify-between items-center p-4 border border-white/5 hover:border-[#009a44] transition-all cursor-pointer text-xs uppercase font-bold">
                         <div class="flex gap-8 items-center">
                             <span class="text-emerald-500 w-16">JAN 27</span>
-                            <span>DIA DUIT AR DOMHAN W/ MAX REBO</span>
+                            <span>???</span>
                         </div>
                         <span class="opacity-40">18:00 — 20:00 EST</span>
                     </div>
                     <div class="flex justify-between items-center p-4 border border-white/5 hover:border-[#009a44] transition-all cursor-pointer text-xs uppercase font-bold">
                         <div class="flex gap-8 items-center">
                             <span class="text-emerald-500 w-16">FEB 10</span>
-                            <span>BOGADH W/ MAX REBO</span>
+                            <span>???</span>
                         </div>
                         <span class="opacity-40">18:00 — 20:00 EST</span>
                     </div>
@@ -249,10 +249,22 @@
                     <div class="col-id">ID</div>
                     <div class="col-play">Listen</div>
                 </div>
-                <div class="archive-list-row px-2" onclick="playArchive('Max Rebo', 'BGDH.000')">
+                <div class="archive-list-row px-2" onclick="playArchive('Seán Óg', 'BGDH.042')">
                     <div class="col-date">17.03.25</div>
-                    <div class="col-artist">Coming Soon</div>
-                    <div class="col-id">BGDH.001</div>
+                    <div class="col-artist">Seán Óg - St. Patrick's Day Special</div>
+                    <div class="col-id">BGDH.042</div>
+                    <div class="col-play">PLAY ➔</div>
+                </div>
+                <div class="archive-list-row px-2" onclick="playArchive('Eisirt', 'BGDH.041')">
+                    <div class="col-date">03.03.25</div>
+                    <div class="col-artist">Eisirt - Industrial Drone</div>
+                    <div class="col-id">BGDH.041</div>
+                    <div class="col-play">PLAY ➔</div>
+                </div>
+                <div class="archive-list-row px-2" onclick="playArchive('Ciara B2B Naoise', 'BGDH.040')">
+                    <div class="col-date">18.02.25</div>
+                    <div class="col-artist">Ciara B2B Naoise - House Session</div>
+                    <div class="col-id">BGDH.040</div>
                     <div class="col-play">PLAY ➔</div>
                 </div>
             </div>
@@ -349,7 +361,6 @@
 
         // --- Radio Automation Logic ---
         function updateRadioStatus() {
-            // Select all elements that need updating
             const statusEl = document.getElementById('playerStatus');
             const headerStatusEl = document.getElementById('headerStatus');
             const indicatorEl = document.getElementById('liveIndicator');
@@ -385,16 +396,11 @@
 
             if (isTuesday && isOnWeek && isLiveTime) {
                 const liveText = "Live Now on Newtown Radio";
-                
-                // Update Footer
                 statusEl.innerText = liveText;
                 statusEl.classList.add('text-emerald-500');
                 indicatorEl.classList.replace('hidden', 'flex');
-                
-                // Update Header
                 headerStatusEl.innerText = "ON AIR: LIVE FROM BROOKLYN";
                 headerIndicatorEl.classList.remove('hidden');
-                
             } else {
                 const diff = nextShow - nycTime;
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -403,28 +409,25 @@
                 const secs = Math.floor((diff / 1000) % 60);
                 const timeString = `${days}d ${hours}h ${mins}m ${secs}s`;
 
-                // Update Footer
                 statusEl.innerText = `Next Live in: ${timeString}`;
                 statusEl.classList.remove('text-emerald-500');
                 indicatorEl.classList.replace('flex', 'hidden');
-
-                // Update Header
                 headerStatusEl.innerText = `Next Broadcast: ${timeString}`;
                 headerIndicatorEl.classList.add('hidden');
             }
         }
 
-            setInterval(updateRadioStatus, 1000);
-            updateRadioStatus();
+        setInterval(updateRadioStatus, 1000);
+        updateRadioStatus();
 
-            function playArchive(artist, showId) {
-                const statusEl = document.getElementById('playerStatus');
-                statusEl.innerText = artist;
-                document.getElementById('playerShow').innerText = showId;
-                statusEl.classList.remove('text-emerald-500');
-            }
+        function playArchive(artist, showId) {
+            const statusEl = document.getElementById('playerStatus');
+            statusEl.innerText = artist;
+            document.getElementById('playerShow').innerText = showId;
+            statusEl.classList.remove('text-emerald-500');
+        }
 
-        // --- High Density Background Pixels (Original Engine) ---
+        // --- High Density Background Pixels ---
         const canvas = document.getElementById('pixelCanvas');
         const ctx = canvas.getContext('2d');
         let width, height, rows, cols, pixels = [];
