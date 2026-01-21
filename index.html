@@ -60,7 +60,6 @@
             pointer-events: none;
         }
 
-        /* Lofi Box Styling */
         .lofi-border {
             border: 2px solid var(--off-white);
         }
@@ -174,14 +173,14 @@
         </div>
 
         <div class="flex gap-6 text-xs uppercase tracking-widest font-bold relative z-10">
-            <button onclick="switchView('archive')" class="hover:text-[#009a44] transition-colors">Archive</button>
             <button onclick="switchView('home')" class="hover:text-[#009a44] transition-colors">Schedule</button>
+            <button onclick="switchView('archive')" class="hover:text-[#009a44] transition-colors">Archive</button>
         </div>
     </nav>
 
     <div class="marquee-container" id="marqueeContainer">
         <div class="marquee-content" id="marqueeContent">
-            LIVE ON NEWTOWN RADIO: BOGADH WITH MAX REBO • CEOL AGUS CULTÚR • EVERY SECOND TUESDAY 18:00-20:00 EST • UPCOMING: ??? • 
+            LIVE ON NEWTOWN RADIO: BOGADH WITH MAX REBO • CEOL AGUS CULTÚR • EVERY SECOND TUESDAY 18:00-20:00 EST • NEXT BROADCAST: JAN 27 • 
         </div>
     </div>
 
@@ -190,22 +189,22 @@
             <div class="min-h-[70vh] flex flex-col items-center justify-center px-6 text-center">
                 
                 <div class="mb-4 text-emerald-500 text-sm flex items-center gap-2 relative z-30 font-bold uppercase tracking-widest">
-                    <span id="headerIndicator" class="w-2 h-2 rounded-full bg-emerald-500 hidden animate-pulse"></span>
+                    <span id="headerIndicator" class="w-2 h-2 rounded-full bg-red-500 hidden animate-pulse"></span>
                     <span id="headerStatus">Checking Status...</span>
                 </div>
                 
                 <div class="lofi-border p-12 bg-black/40 backdrop-blur-xl max-w-lg text-center relative z-30">
                     <p class="text-sm leading-relaxed mb-8 font-bold uppercase tracking-tight">
-                        Bogadh [Moving] is a biweekly radio frequency broadcasting from New York City. Bridging the Gap.
+                        Bogadh [Moving] is a biweekly radio frequency broadcasting from New York City. Platforming Irish DJs and friends of the station. Bringing the sonic gap between NYC and Dublin.
                     </p>
-                    <button onclick="window.open('https://newtownradio.com/', '_blank')" class="w-full bg-[#009a44] text-black py-4 font-bold uppercase tracking-widest hover:bg-white transition-all text-sm">
-                        LISTEN LIVE / TÉIGH BEO
+                    <button id="liveButton" onclick="window.open('https://newtownradio.com/', '_blank')" class="w-full bg-[#009a44] text-black py-4 font-bold uppercase tracking-widest hover:bg-white transition-all text-sm">
+                        CHECKING STATUS...
                     </button>
                 </div>
 
                 <div class="mt-12 flex gap-12 text-[10px] uppercase opacity-40 font-bold tracking-widest relative z-30">
                     <div>BGDH-NYC</div>
-                    <div>98.4 DIGITAL</div>
+                    <div>NEWOTWN RADIO</div>
                     <div>BROOKLYN, NY</div>
                 </div>
             </div>
@@ -216,14 +215,14 @@
                     <div class="flex justify-between items-center p-4 border border-white/5 hover:border-[#009a44] transition-all cursor-pointer text-xs uppercase font-bold">
                         <div class="flex gap-8 items-center">
                             <span class="text-emerald-500 w-16">JAN 27</span>
-                            <span>???</span>
+                            <span>BOGADH RADIO</span>
                         </div>
                         <span class="opacity-40">18:00 — 20:00 EST</span>
                     </div>
                     <div class="flex justify-between items-center p-4 border border-white/5 hover:border-[#009a44] transition-all cursor-pointer text-xs uppercase font-bold">
                         <div class="flex gap-8 items-center">
                             <span class="text-emerald-500 w-16">FEB 10</span>
-                            <span>???</span>
+                            <span>BOGADH RADIO</span>
                         </div>
                         <span class="opacity-40">18:00 — 20:00 EST</span>
                     </div>
@@ -249,22 +248,10 @@
                     <div class="col-id">ID</div>
                     <div class="col-play">Listen</div>
                 </div>
-                <div class="archive-list-row px-2" onclick="playArchive('Seán Óg', 'BGDH.042')">
+                <div class="archive-list-row px-2" onclick="playArchive('Max Rebo', 'BGDH.000')">
                     <div class="col-date">17.03.25</div>
-                    <div class="col-artist">Seán Óg - St. Patrick's Day Special</div>
-                    <div class="col-id">BGDH.042</div>
-                    <div class="col-play">PLAY ➔</div>
-                </div>
-                <div class="archive-list-row px-2" onclick="playArchive('Eisirt', 'BGDH.041')">
-                    <div class="col-date">03.03.25</div>
-                    <div class="col-artist">Eisirt - Industrial Drone</div>
-                    <div class="col-id">BGDH.041</div>
-                    <div class="col-play">PLAY ➔</div>
-                </div>
-                <div class="archive-list-row px-2" onclick="playArchive('Ciara B2B Naoise', 'BGDH.040')">
-                    <div class="col-date">18.02.25</div>
-                    <div class="col-artist">Ciara B2B Naoise - House Session</div>
-                    <div class="col-id">BGDH.040</div>
+                    <div class="col-artist">Coming Soon..</div>
+                    <div class="col-id">BGDH.000</div>
                     <div class="col-play">PLAY ➔</div>
                 </div>
             </div>
@@ -359,61 +346,64 @@
 
         requestAnimationFrame(updateTicker);
 
-        // --- Radio Automation Logic ---
+        // --- Radio Automation Logic (FIXED 14-DAY LOGIC) ---
+        const anchorDate = new Date("2026-01-13T18:00:00-05:00");
+
+        function getNextShowTime(currentTime) {
+            const msInTwoWeeks = 14 * 24 * 60 * 60 * 1000;
+            const elapsed = currentTime.getTime() - anchorDate.getTime();
+            const periodsPassed = Math.floor(elapsed / msInTwoWeeks);
+            let target = new Date(anchorDate.getTime() + (periodsPassed * msInTwoWeeks));
+            const showEndTime = new Date(target.getTime() + (2 * 60 * 60 * 1000));
+            
+            if (currentTime > showEndTime) {
+                target = new Date(target.getTime() + msInTwoWeeks);
+            }
+            return target;
+        }
+
         function updateRadioStatus() {
             const statusEl = document.getElementById('playerStatus');
             const headerStatusEl = document.getElementById('headerStatus');
             const indicatorEl = document.getElementById('liveIndicator');
             const headerIndicatorEl = document.getElementById('headerIndicator');
+            const liveButton = document.getElementById('liveButton');
             
             const now = new Date();
             const nycString = now.toLocaleString("en-US", {timeZone: "America/New_York"});
             const nycTime = new Date(nycString);
-            const anchorDate = new Date("2026-01-13T18:00:00-05:00");
-            const msInWeek = 7 * 24 * 60 * 60 * 1000;
-
-            function getNextShowTime(currentTime) {
-                let target = new Date(currentTime);
-                target.setHours(18, 0, 0, 0);
-                while (target.getDay() !== 2) {
-                    target.setDate(target.getDate() + 1);
-                }
-                const weeksSinceAnchor = Math.floor((target - anchorDate) / msInWeek);
-                if (weeksSinceAnchor % 2 !== 0) {
-                    target.setDate(target.getDate() + 7);
-                }
-                if (currentTime.getDay() === 2 && currentTime.getHours() >= 20) {
-                    target.setDate(target.getDate() + 14);
-                }
-                return target;
-            }
 
             const nextShow = getNextShowTime(nycTime);
-            const isTuesday = nycTime.getDay() === 2;
-            const weeksSinceAnchorNow = Math.floor((nycTime - anchorDate) / msInWeek);
-            const isOnWeek = weeksSinceAnchorNow % 2 === 0;
+            const isShowDay = nycTime.toDateString() === nextShow.toDateString();
             const isLiveTime = nycTime.getHours() >= 18 && nycTime.getHours() < 20;
 
-            if (isTuesday && isOnWeek && isLiveTime) {
+            if (isShowDay && isLiveTime) {
                 const liveText = "Live Now on Newtown Radio";
                 statusEl.innerText = liveText;
                 statusEl.classList.add('text-emerald-500');
                 indicatorEl.classList.replace('hidden', 'flex');
                 headerStatusEl.innerText = "ON AIR: LIVE FROM BROOKLYN";
                 headerIndicatorEl.classList.remove('hidden');
+                
+                // Dynamic Button Update
+                liveButton.innerText = "LISTEN LIVE / TÉIGH BEO";
             } else {
                 const diff = nextShow - nycTime;
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
                 const mins = Math.floor((diff / (1000 * 60)) % 60);
                 const secs = Math.floor((diff / 1000) % 60);
-                const timeString = `${days}d ${hours}h ${mins}m ${secs}s`;
+                
+                const timeString = `${days}D ${hours}H ${mins}M ${secs}S`;
 
                 statusEl.innerText = `Next Live in: ${timeString}`;
                 statusEl.classList.remove('text-emerald-500');
                 indicatorEl.classList.replace('flex', 'hidden');
                 headerStatusEl.innerText = `Next Broadcast: ${timeString}`;
                 headerIndicatorEl.classList.add('hidden');
+
+                // Dynamic Button Update
+                liveButton.innerText = "BACK ON AIR SOON...";
             }
         }
 
@@ -431,11 +421,9 @@
         const canvas = document.getElementById('pixelCanvas');
         const ctx = canvas.getContext('2d');
         let width, height, rows, cols, pixels = [];
-        
         const cellSize = 12; 
         const interactionRadius = 250; 
         const baseAlphaValue = 0.02; 
-        
         let mouse = { x: -1000, y: -1000 };
 
         function init() {
@@ -468,16 +456,13 @@
         function draw() {
             ctx.clearRect(0, 0, width, height);
             const now = Date.now();
-            
             pixels.forEach(p => {
                 const centerX = p.x + cellSize / 2;
                 const centerY = p.y + cellSize / 2;
                 const dx = mouse.x - centerX;
                 const dy = mouse.y - centerY;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                
                 const shimmer = Math.sin(now * p.frequency + p.offset);
-                
                 if (dist < interactionRadius) {
                     const force = (1 - dist / interactionRadius);
                     p.targetAlpha = p.baseAlpha + (Math.pow(force, 2) * 0.85); 
@@ -488,30 +473,19 @@
                     p.targetOffsetX = 0;
                     p.targetOffsetY = 0;
                 }
-
                 p.alpha += (p.targetAlpha - p.alpha) * 0.08;
                 p.offsetX += (p.targetOffsetX - p.offsetX) * 0.1;
                 p.offsetY += (p.targetOffsetY - p.offsetY) * 0.1;
-
                 if (p.alpha > 0.005) {
                     ctx.fillStyle = `rgba(0, 154, 68, ${p.alpha})`;
                     const sizePadding = 2;
-                    ctx.fillRect(
-                        p.x + sizePadding + p.offsetX, 
-                        p.y + sizePadding + p.offsetY, 
-                        cellSize - (sizePadding * 2), 
-                        cellSize - (sizePadding * 2)
-                    );
+                    ctx.fillRect(p.x + sizePadding + p.offsetX, p.y + sizePadding + p.offsetY, cellSize - (sizePadding * 2), cellSize - (sizePadding * 2));
                 }
             });
             requestAnimationFrame(draw);
         }
 
-        window.addEventListener('mousemove', (e) => { 
-            mouse.x = e.clientX; 
-            mouse.y = e.clientY; 
-        });
-        
+        window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
         window.addEventListener('resize', init);
         window.onload = () => { init(); draw(); };
     </script>
