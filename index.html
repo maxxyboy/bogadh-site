@@ -17,7 +17,6 @@
         rel="stylesheet">
 
     <style>
-
         /* --- Volume Control --- */
         .volume-container {
             position: relative;
@@ -397,7 +396,7 @@
                         Bogadh [Moving] is a biweekly radio frequency broadcasting from New York City. Platforming Irish
                         DJs and friends of the station. Bridging the sonic gap between NYC and Dublin.
                     </p>
-                    <button id="liveButton" onclick="window.open('https://newtownradio.com/', '_blank')"
+                    <button id="liveButton"
                         class="w-full bg-[#009a44] text-black py-4 font-bold uppercase tracking-widest hover:bg-white transition-all text-sm">
                         CHECKING STATUS...
                     </button>
@@ -519,13 +518,23 @@
     </footer>
 
     <script>
-        // --- CONFIG & STATE ---
+        // --- CONFIGURATION ---
+        const CONFIG = {
+            mixcloudUser: 'newtownradiobk',
+            liveUrl: 'https://newtownradio.com/',
+            anchorDate: new Date("2026-01-13T18:00:00-05:00") // Biweekly Anchor
+        };
+
+        // --- STATE MANAGEMENT ---
+        const APP_STATE = {
+            widgetReady: false,
+            isPlayingArchive: false,
+            isStationLive: false // Calculated every second
+        };
+
         let widget = null;
-        let isPlayerReady = false;
-        let isArchivePlaying = false;
+        let progressInterval = null;
         let archiveLoaded = false;
-        const MIXCLOUD_USER = 'newtownradiobk';
-        const ANCHOR_DATE = new Date("2026-01-13T18:00:00-05:00"); // Base date for biweekly calculation
 
         // --- INITIALIZATION ---
         window.onload = () => {
@@ -541,55 +550,143 @@
             setInterval(updateRadioStatus, 1000);
             updateRadioStatus();
 
-            // 4. Inject Mixcloud Widget (Strict Chrome Permission Fix)
+            // 4. Inject Mixcloud Widget
             injectMixcloudWidget();
         };
 
-        // --- PLAYER LOGIC ---
+        // --- MAIN PLAY BUTTON LOGIC ---
+        function toggleGlobalPlay() {
+            // Priority 1: If Archive is active (playing or paused), control the widget
+            if (APP_STATE.isPlayingArchive && widget) {
+                widget.togglePlay().then(() => {
+                    const isHidden = document.getElementById('icon-play').classList.contains('hidden');
+                    updatePlayIcon(!isHidden);
+                }).catch(e => console.warn("Toggle failed", e));
+                return;
+            }
+
+            // Priority 2: If Station is Live, go to external radio
+            if (APP_STATE.isStationLive) {
+                window.open(CONFIG.liveUrl, '_blank');
+                return;
+            }
+
+            // Priority 3: Otherwise (Countdown mode), go to Archive View
+            switchView('archive');
+        }
+
+        // --- TIMER & STATUS LOGIC ---
+        function getNextShowTime(currentTime) {
+            const msInTwoWeeks = 14 * 24 * 60 * 60 * 1000;
+            const elapsed = currentTime.getTime() - CONFIG.anchorDate.getTime();
+            const periodsPassed = Math.floor(elapsed / msInTwoWeeks);
+            let target = new Date(CONFIG.anchorDate.getTime() + (periodsPassed * msInTwoWeeks));
+            const showEndTime = new Date(target.getTime() + (2 * 60 * 60 * 1000)); // 2 Hour show
+
+            if (currentTime > showEndTime) target = new Date(target.getTime() + msInTwoWeeks);
+            return target;
+        }
+
+        function updateRadioStatus() {
+            // 1. Calculate Time
+            const now = new Date();
+            const nycTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+            const nextShow = getNextShowTime(nycTime);
+            
+            const isShowDay = nycTime.toDateString() === nextShow.toDateString();
+            const isLiveTime = nycTime.getHours() >= 18 && nycTime.getHours() < 20;
+
+            // 2. Update State
+            APP_STATE.isStationLive = (isShowDay && isLiveTime);
+
+            // 3. UI Updates (Only if NOT listening to archive)
+            if (!APP_STATE.isPlayingArchive) {
+                updateLiveStatusUI(nycTime, nextShow, APP_STATE.isStationLive);
+            }
+        }
+
+        function updateLiveStatusUI(currentTime, nextTime, isLive) {
+            const els = {
+                status: document.getElementById('playerStatus'),
+                headerStatus: document.getElementById('headerStatus'),
+                indicator: document.getElementById('liveIndicator'),
+                headerIndicator: document.getElementById('headerIndicator'),
+                btn: document.getElementById('liveButton'),
+                show: document.getElementById('playerShow'),
+                progress: document.getElementById('progressContainer'),
+                time: document.getElementById('timeDisplay')
+            };
+
+            // Ensure archive UI is hidden
+            els.progress.classList.add('hidden');
+            els.time.classList.add('hidden');
+            els.show.innerText = "Bogadh with Max Rebo"; // Reset Title
+
+            if (isLive) {
+                // HEADER
+                els.headerStatus.innerText = "ON AIR: LIVE FROM BROOKLYN";
+                els.headerIndicator.classList.remove('hidden');
+                els.btn.innerText = "LISTEN LIVE / TÉIGH BEO";
+                els.btn.onclick = () => window.open(CONFIG.liveUrl, '_blank');
+
+                // PLAYER BAR
+                els.status.innerText = "Live Now on Newtown Radio";
+                els.status.classList.add('text-emerald-500');
+                els.indicator.classList.replace('hidden', 'flex');
+            } else {
+                // Countdown Calc
+                const diff = nextTime - currentTime;
+                const d = Math.floor(diff / (86400000));
+                const h = Math.floor((diff / 3600000) % 24);
+                const m = Math.floor((diff / 60000) % 60);
+                const s = Math.floor((diff / 1000) % 60);
+                const timeStr = `${d}D ${h}H ${m}M ${s}S`;
+
+                // HEADER
+                els.headerStatus.innerText = `Next Broadcast: ${timeStr}`;
+                els.headerIndicator.classList.add('hidden');
+                els.btn.innerText = "LISTEN TO ARCHIVE";
+                els.btn.onclick = () => switchView('archive');
+
+                // PLAYER BAR
+                els.status.innerText = `Next Live in: ${timeStr}`;
+                els.status.classList.remove('text-emerald-500');
+                els.indicator.classList.replace('flex', 'hidden');
+            }
+        }
+
+        // --- PLAYER / WIDGET LOGIC ---
         function injectMixcloudWidget() {
             const iframe = document.createElement('iframe');
             iframe.id = 'mixcloud-widget';
             iframe.width = "100%";
             iframe.height = "60";
-            iframe.src = `https://www.mixcloud.com/widget/iframe/?hide_cover=1&mini=1&light=1&feed=%2F${MIXCLOUD_USER}%2F`;
+            iframe.src = `https://www.mixcloud.com/widget/iframe/?hide_cover=1&mini=1&light=1&feed=%2F${CONFIG.mixcloudUser}%2F`;
             iframe.frameBorder = "0";
-
-            // Critical permission string for Chrome/Localhost
             iframe.allow = "autoplay *; encrypted-media *; clipboard-write; fullscreen";
 
             document.getElementById('widget-mount').appendChild(iframe);
 
-            // Slight delay to ensure DOM is ready for API attachment
             setTimeout(() => {
                 widget = Mixcloud.PlayerWidget(iframe);
                 widget.ready.then(() => {
                     console.log("Mixcloud Widget Connected");
-                    isPlayerReady = true;
+                    APP_STATE.widgetReady = true;
                 }).catch(err => console.error("Widget Init Error:", err));
             }, 500);
         }
 
-        function toggleGlobalPlay() {
-            if (isArchivePlaying && widget) {
-                widget.togglePlay().then(() => {
-                    const isHidden = document.getElementById('icon-play').classList.contains('hidden');
-                    updatePlayIcon(!isHidden);
-                }).catch(e => console.warn("Toggle failed", e));
-            } else {
-                window.open('https://newtownradio.com/', '_blank');
-            }
-        }
-
         function playArchiveTrack(key, title) {
-            if (!isPlayerReady || !widget) {
+            if (!APP_STATE.widgetReady || !widget) {
                 console.warn("Player loading...");
                 return;
             }
 
-            isArchivePlaying = true;
-            document.getElementById('liveIndicator').classList.add('hidden');
+            // Update State
+            APP_STATE.isPlayingArchive = true;
 
             // UI Feedback
+            document.getElementById('liveIndicator').classList.add('hidden');
             const statusEl = document.getElementById('playerStatus');
             statusEl.innerText = "LOADING...";
             statusEl.classList.remove('text-emerald-500');
@@ -600,6 +697,7 @@
             widget.load(key, true).then(() => {
                 statusEl.innerText = "NOW PLAYING:";
                 updatePlayIcon(true);
+                startProgressLoop();
             }).catch(err => {
                 console.error("Load failed:", err);
                 statusEl.innerText = "CLICK PLAY >";
@@ -619,10 +717,48 @@
             }
         }
 
-        // --- ARCHIVE LOGIC ---
+        // --- PROGRESS & SEEKING ---
+        function formatTime(seconds) {
+            if (!seconds || isNaN(seconds)) return "00:00";
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function startProgressLoop() {
+            if (progressInterval) clearInterval(progressInterval);
+            
+            // Show UI elements
+            document.getElementById('progressContainer').classList.remove('hidden');
+            document.getElementById('progressContainer').classList.add('active');
+            document.getElementById('timeDisplay').classList.remove('hidden');
+
+            progressInterval = setInterval(() => {
+                if (!widget || !APP_STATE.isPlayingArchive) return;
+                Promise.all([widget.getPosition(), widget.getDuration()]).then(([pos, dur]) => {
+                    if (!dur) return;
+                    const percent = (pos / dur) * 100;
+                    document.getElementById('progressFill').style.width = `${percent}%`;
+                    document.getElementById('timeDisplay').innerText = `${formatTime(pos)} / ${formatTime(dur)}`;
+                });
+            }, 1000);
+        }
+
+        function seekTrack(e) {
+            if (!widget || !APP_STATE.isPlayingArchive) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            
+            widget.getDuration().then(dur => {
+                widget.seek(dur * percent);
+                document.getElementById('progressFill').style.width = `${percent * 100}%`;
+            });
+        }
+
+        // --- ARCHIVE FETCHING ---
         async function fetchMixcloudArchive() {
             const container = document.getElementById('archive-container');
-            const apiUrl = `https://api.mixcloud.com/${MIXCLOUD_USER}/cloudcasts/?limit=100`;
+            const apiUrl = `https://api.mixcloud.com/${CONFIG.mixcloudUser}/cloudcasts/?limit=100`;
 
             try {
                 const response = await fetch(apiUrl);
@@ -633,7 +769,7 @@
                     show.name.toLowerCase().includes('bogadh')
                 );
 
-                container.innerHTML = ''; // Clear loading state
+                container.innerHTML = ''; 
 
                 if (filteredShows.length === 0) {
                     container.innerHTML = '<div class="py-12 text-center text-xs uppercase opacity-50">No "Bogadh" records found.</div>';
@@ -680,6 +816,20 @@
         }
         window.onpopstate = () => switchView(window.location.hash.replace('#', '') || 'home');
 
+        // --- VOLUME ---
+        function toggleVolume() {
+            document.getElementById('volumeControl').classList.toggle('active');
+        }
+
+        function setVolume(val) {
+            if (widget) widget.setVolume(parseFloat(val));
+        }
+
+        window.addEventListener('click', (e) => {
+            const vol = document.getElementById('volumeControl');
+            if (vol && !vol.contains(e.target)) vol.classList.remove('active');
+        });
+
         // --- VISUALS (MARQUEE & CANVAS) ---
         const marqueeContainer = document.getElementById('marqueeContainer');
         const marqueeContent = document.getElementById('marqueeContent');
@@ -687,19 +837,17 @@
         let isDraggingTicker = false;
         let startX = 0;
 
-        // Duplicate content for seamless loop
         marqueeContent.innerHTML += " " + marqueeContent.innerHTML;
 
         function updateTicker() {
             if (!isDraggingTicker) {
-                tickerPos -= 1.5; // Speed
+                tickerPos -= 1.5; 
                 if (Math.abs(tickerPos) >= marqueeContent.offsetWidth / 2) tickerPos = 0;
             }
             marqueeContent.style.transform = `translateX(${tickerPos}px)`;
             requestAnimationFrame(updateTicker);
         }
 
-        // Marquee Interaction
         marqueeContainer.addEventListener('mousedown', (e) => { isDraggingTicker = true; startX = e.clientX; marqueeContainer.style.cursor = 'grabbing'; });
         window.addEventListener('mousemove', (e) => { if (isDraggingTicker) { tickerPos += e.clientX - startX; startX = e.clientX; } });
         window.addEventListener('mouseup', () => { if (isDraggingTicker) { isDraggingTicker = false; marqueeContainer.style.cursor = 'grab'; } });
@@ -740,7 +888,6 @@
                 const centerY = p.y + cellSize / 2;
                 const dist = Math.sqrt((mouse.x - centerX) ** 2 + (mouse.y - centerY) ** 2);
 
-                // Interaction Logic
                 if (dist < 250) {
                     const force = (1 - dist / 250);
                     p.targetAlpha = p.baseAlpha + (Math.pow(force, 2) * 0.85);
@@ -751,9 +898,8 @@
                     p.targetOffsetX = 0; p.targetOffsetY = 0;
                 }
 
-                // Physics Smoothing
                 p.alpha += (p.targetAlpha - p.alpha) * 0.08;
-                p.offsetX += (0 - p.offsetX) * 0.1; // Return to center slightly faster
+                p.offsetX += (0 - p.offsetX) * 0.1; 
                 p.offsetY += (0 - p.offsetY) * 0.1;
 
                 if (p.alpha > 0.005) {
@@ -765,266 +911,6 @@
         }
         window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
         window.addEventListener('resize', initCanvas);
-
-        // --- RADIO AUTOMATION ---
-        function getNextShowTime(currentTime) {
-            const msInTwoWeeks = 14 * 24 * 60 * 60 * 1000;
-            const elapsed = currentTime.getTime() - ANCHOR_DATE.getTime();
-            const periodsPassed = Math.floor(elapsed / msInTwoWeeks);
-            let target = new Date(ANCHOR_DATE.getTime() + (periodsPassed * msInTwoWeeks));
-            const showEndTime = new Date(target.getTime() + (2 * 60 * 60 * 1000)); // 2 Hour show
-
-            if (currentTime > showEndTime) target = new Date(target.getTime() + msInTwoWeeks);
-            return target;
-        }
-
-        function updateRadioStatus() {
-                // 1. Get Elements
-                const elements = {
-                    status: document.getElementById('playerStatus'),        // Player Bar Text
-                    headerStatus: document.getElementById('headerStatus'),  // Home Page Clock
-                    indicator: document.getElementById('liveIndicator'),    // Player Bar Live Dot
-                    headerIndicator: document.getElementById('headerIndicator'), // Home Page Live Dot
-                    btn: document.getElementById('liveButton'),             // Big Home Button
-                    show: document.getElementById('playerShow')             // Player Show Title
-                };
-
-                // 2. Calculate Times
-                const now = new Date();
-                // Force NYC time for calculation
-                const nycTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-                const nextShow = getNextShowTime(nycTime);
-
-                const isShowDay = nycTime.toDateString() === nextShow.toDateString();
-                const isLiveTime = nycTime.getHours() >= 18 && nycTime.getHours() < 20;
-
-                // 3. Calculate Countdown String
-                const diff = nextShow - nycTime;
-                const days = Math.floor(diff / (86400000));
-                const hours = Math.floor((diff / 3600000) % 24);
-                const mins = Math.floor((diff / 60000) % 60);
-                const secs = Math.floor((diff / 1000) % 60);
-                const timeString = `${days}D ${hours}H ${mins}M ${secs}S`;
-
-                // --- PART A: Always Update the Home Page (Header & Button) ---
-                if (isShowDay && isLiveTime) {
-                    elements.headerStatus.innerText = "ON AIR: LIVE FROM BROOKLYN";
-                    elements.headerIndicator.classList.remove('hidden');
-                    elements.btn.innerText = "LISTEN LIVE / TÉIGH BEO";
-                } else {
-                    elements.headerStatus.innerText = `Next Broadcast: ${timeString}`;
-                    elements.headerIndicator.classList.add('hidden');
-                    elements.btn.innerText = "BACK ON AIR SOON...";
-                }
-
-                // --- PART B: Only Update Player Bar if NOT playing an Archive Track ---
-                if (!isArchivePlaying) {
-                    if (isShowDay && isLiveTime) {
-                        elements.status.innerText = "Live Now on Newtown Radio";
-                        elements.status.classList.add('text-emerald-500');
-                        elements.indicator.classList.replace('hidden', 'flex');
-                        elements.show.innerText = "Bogadh with Max Rebo";
-                    } else {
-                        elements.status.innerText = `Next Live in: ${timeString}`;
-                        elements.status.classList.remove('text-emerald-500');
-                        elements.indicator.classList.replace('flex', 'hidden');
-                        elements.show.innerText = "Bogadh with Max Rebo";
-                    }
-                }
-            }
-
-
-
-    
-            // --- 1. Add to CONFIG & STATE ---
-                let progressInterval = null; // To store the timer ID
-
-                // --- 2. Add Helper: Format Seconds to MM:SS ---
-                function formatTime(seconds) {
-                    if (!seconds || isNaN(seconds)) return "00:00";
-                    const m = Math.floor(seconds / 60);
-                    const s = Math.floor(seconds % 60);
-                    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-                }
-
-                // --- 3. Add Progress Logic (Call this inside playArchiveTrack) ---
-                function startProgressLoop() {
-                    // Clear existing loop if any
-                    if (progressInterval) clearInterval(progressInterval);
-
-                    // Show UI elements
-                    document.getElementById('progressContainer').classList.remove('hidden');
-                    document.getElementById('progressContainer').classList.add('active');
-                    document.getElementById('timeDisplay').classList.remove('hidden');
-                    document.getElementById('liveIndicator').classList.add('hidden'); // Hide live bounce
-
-                    // Start Polling (every 1 second)
-                    progressInterval = setInterval(() => {
-                        if (!widget || !isArchivePlaying) return;
-
-                        Promise.all([widget.getPosition(), widget.getDuration()]).then(([pos, dur]) => {
-                            if (!dur) return;
-
-                            // Update Bar Width
-                            const percent = (pos / dur) * 100;
-                            document.getElementById('progressFill').style.width = `${percent}%`;
-
-                            // Update Time Text
-                            document.getElementById('timeDisplay').innerText =
-                                `${formatTime(pos)} / ${formatTime(dur)}`;
-                        }).catch(err => console.log("Polling error (harmless if track loading)", err));
-
-                    }, 1000);
-                }
-
-                // --- 4. Add Seek Function (Click to jump) ---
-                function seekTrack(e) {
-                    if (!widget || !isArchivePlaying) return;
-
-                    // Calculate click position
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const clickX = e.clientX - rect.left;
-                    const width = rect.width;
-                    const percent = clickX / width;
-
-                    widget.getDuration().then(dur => {
-                        const seekTime = dur * percent;
-                        widget.seek(seekTime);
-                        // Update UI immediately for snappiness
-                        document.getElementById('progressFill').style.width = `${percent * 100}%`;
-                    });
-                }
-
-                // --- 5. Update playArchiveTrack to start the loop ---
-                function playArchiveTrack(key, title) {
-                    if (!isPlayerReady || !widget) {
-                        console.warn("Player loading...");
-                        return;
-                    }
-
-                    isArchivePlaying = true;
-
-                    // Switch UI immediately
-                    document.getElementById('liveIndicator').classList.add('hidden');
-
-                    // UI Feedback
-                    const statusEl = document.getElementById('playerStatus');
-                    statusEl.innerText = "LOADING...";
-                    statusEl.classList.remove('text-emerald-500');
-                    document.getElementById('playerShow').innerText = title;
-                    document.querySelectorAll('.archive-list-row').forEach(el => el.classList.remove('playing'));
-
-                    // Load & Play
-                    widget.load(key, true).then(() => {
-                        statusEl.innerText = "NOW PLAYING:";
-                        updatePlayIcon(true);
-                        startProgressLoop(); // <--- START THE LOOP HERE
-                    }).catch(err => {
-                        console.error("Load failed:", err);
-                        statusEl.innerText = "CLICK PLAY >";
-                        updatePlayIcon(false);
-                    });
-                }
-
-                // --- 6. Update toggleGlobalPlay to stop loop if paused ---
-                function toggleGlobalPlay() {
-                    if (isArchivePlaying && widget) {
-                        widget.togglePlay().then(state => {
-                            const isHidden = document.getElementById('icon-play').classList.contains('hidden');
-                            updatePlayIcon(!isHidden);
-                        }).catch(e => console.warn("Toggle failed", e));
-                    } else {
-                        window.open('https://newtownradio.com/', '_blank');
-                    }
-                }
-
-                // --- 7. Update updateRadioStatus to handle UI visibility ---
-                // (Make sure to reset UI when going back to "Live" mode if needed)
-                function updateRadioStatus() {
-                    if (isArchivePlaying) return;
-
-                    // Ensure progress bar is hidden when in Live Mode
-                    document.getElementById('progressContainer').classList.add('hidden');
-                    document.getElementById('timeDisplay').classList.add('hidden');
-
-                    // ... (Rest of your existing updateRadioStatus logic) ...
-
-                    // Just copy the content of the previous updateRadioStatus here
-                    // or keep your existing one, as long as you add the hiding lines above.
-                    const elements = {
-                        status: document.getElementById('playerStatus'),
-                        headerStatus: document.getElementById('headerStatus'),
-                        indicator: document.getElementById('liveIndicator'),
-                        headerIndicator: document.getElementById('headerIndicator'),
-                        btn: document.getElementById('liveButton'),
-                        show: document.getElementById('playerShow')
-                    };
-
-                    const now = new Date();
-                    const nycTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-                    const nextShow = getNextShowTime(nycTime);
-
-                    const isShowDay = nycTime.toDateString() === nextShow.toDateString();
-                    const isLiveTime = nycTime.getHours() >= 18 && nycTime.getHours() < 20;
-
-                    const diff = nextShow - nycTime;
-                    const days = Math.floor(diff / (86400000));
-                    const hours = Math.floor((diff / 3600000) % 24);
-                    const mins = Math.floor((diff / 60000) % 60);
-                    const secs = Math.floor((diff / 1000) % 60);
-                    const timeString = `${days}D ${hours}H ${mins}M ${secs}S`;
-
-                    if (isShowDay && isLiveTime) {
-                        elements.headerStatus.innerText = "ON AIR: LIVE FROM BROOKLYN";
-                        elements.headerIndicator.classList.remove('hidden');
-                        elements.btn.innerText = "LISTEN LIVE / TÉIGH BEO";
-                    } else {
-                        elements.headerStatus.innerText = `Next Broadcast: ${timeString}`;
-                        elements.headerIndicator.classList.add('hidden');
-                        elements.btn.innerText = "BACK ON AIR SOON...";
-                    }
-
-                    if (!isArchivePlaying) {
-                        if (isShowDay && isLiveTime) {
-                            elements.status.innerText = "Live Now on Newtown Radio";
-                            elements.status.classList.add('text-emerald-500');
-                            elements.indicator.classList.replace('hidden', 'flex');
-                            elements.show.innerText = "Bogadh with Max Rebo";
-                        } else {
-                            elements.status.innerText = `Next Live in: ${timeString}`;
-                            elements.status.classList.remove('text-emerald-500');
-                            elements.indicator.classList.replace('flex', 'hidden');
-                            elements.show.innerText = "Bogadh with Max Rebo";
-                        }
-                    }
-                }
-
-
-                // --- Volume Logic ---
-                    function toggleVolume() {
-                        const container = document.getElementById('volumeControl');
-                        container.classList.toggle('active');
-                    }
-
-                    function setVolume(val) {
-                        if (widget) {
-                            // Mixcloud API volume is 0 to 1
-                            widget.setVolume(parseFloat(val)).then(() => {
-                                console.log("Volume set to", val);
-                            }).catch(e => {
-                                console.warn("Volume control not supported by this widget state", e);
-                            });
-                        }
-                    }
-
-                    // Optional: Close volume popup when clicking elsewhere
-                    window.addEventListener('click', (e) => {
-                        const vol = document.getElementById('volumeControl');
-                        if (vol && !vol.contains(e.target)) {
-                            vol.classList.remove('active');
-                        }
-                    });
-
     </script>
 </body>
 
