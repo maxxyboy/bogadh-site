@@ -17,74 +17,6 @@
         rel="stylesheet">
 
     <style>
-        /* --- Volume Control --- */
-        .volume-container {
-            position: relative;
-            margin-left: 15px;
-            display: flex;
-            align-items: center;
-        }
-
-        .volume-btn {
-            cursor: pointer;
-            opacity: 0.7;
-            transition: opacity 0.2s;
-        }
-        .volume-btn:hover, .volume-container.active .volume-btn { opacity: 1; }
-
-        .volume-popup {
-            position: absolute;
-            bottom: 140%; /* Popped up above icon */
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30px;
-            height: 100px;
-            background: #111;
-            border: 2px solid var(--irish-green);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-            padding: 10px 0;
-        }
-
-        .volume-container.active .volume-popup {
-            display: flex;
-        }
-
-        /* Vertical Range Input Styling */
-        input[type=range].volume-slider {
-            -webkit-appearance: none;
-            width: 80px; /* Length of slider */
-            height: 4px;
-            background: rgba(255,255,255,0.2);
-            outline: none;
-            /* Rotate to make vertical */
-            transform: rotate(-90deg);
-        }
-
-        /* The Slider Knob (Thumb) */
-        input[type=range].volume-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 12px;
-            height: 12px;
-            background: var(--irish-green);
-            cursor: pointer;
-            border: none;
-            border-radius: 0; /* Square for retro look */
-        }
-
-        input[type=range].volume-slider::-moz-range-thumb {
-            width: 12px;
-            height: 12px;
-            background: var(--irish-green);
-            cursor: pointer;
-            border: none;
-            border-radius: 0;
-        }
-
-        /* --- 1. Variables & Global Styles --- */
         :root {
             --irish-green: #009a44;
             --off-white: #f5f5f5;
@@ -96,15 +28,10 @@
             background-color: var(--studio-black);
             color: var(--off-white);
             overflow-x: hidden;
-            padding-bottom: 80px;
-            /* Space for player bar */
+            padding-bottom: 100px;
         }
 
-        input::placeholder {
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        /* --- 2. Technical / Hidden Elements --- */
+        /* --- Technical --- */
         #widget-mount {
             position: absolute;
             left: 0;
@@ -116,7 +43,7 @@
             z-index: -10;
         }
 
-        /* --- 3. Background Visuals --- */
+        /* --- Visual Background Layer --- */
         .visual-layer {
             position: fixed;
             inset: 0;
@@ -131,7 +58,6 @@
             width: 100%;
             height: 100%;
             z-index: 5;
-            opacity: 1;
         }
 
         .scanline {
@@ -154,11 +80,11 @@
             }
         }
 
+        /* --- Components --- */
         .lofi-border {
             border: 2px solid var(--off-white);
         }
 
-        /* --- 4. Marquee --- */
         .marquee-container {
             background: var(--irish-green);
             color: black;
@@ -174,10 +100,6 @@
             z-index: 60;
         }
 
-        .marquee-container:active {
-            cursor: grabbing;
-        }
-
         .marquee-content {
             display: inline-block;
             font-size: 1.2rem;
@@ -185,7 +107,6 @@
             will-change: transform;
         }
 
-        /* --- 5. View Management --- */
         .view-section {
             display: none;
             min-height: 100vh;
@@ -195,7 +116,6 @@
             display: block;
         }
 
-        /* --- 6. Archive List --- */
         .archive-list-row {
             display: flex;
             align-items: center;
@@ -204,9 +124,8 @@
             font-size: 13px;
             text-transform: uppercase;
             font-weight: bold;
-            transition: background 0.2s ease, color 0.2s ease;
+            transition: all 0.2s;
             cursor: pointer;
-            text-decoration: none;
             color: inherit;
         }
 
@@ -214,61 +133,17 @@
         .archive-list-row.playing {
             background: var(--irish-green);
             color: black;
-            border-bottom-color: black;
         }
 
-        .archive-list-row:hover .play-icon {
-            opacity: 1;
-        }
-
-        .archive-header {
-            display: flex;
-            font-size: 10px;
-            opacity: 0.4;
-            padding-bottom: 8px;
-            border-bottom: 2px solid white;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
-
-        /* Archive Columns */
-        .col-date {
-            width: 20%;
-        }
-
-        .col-artist {
-            width: 60%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .col-play {
-            width: 20%;
-            text-align: right;
-        }
-
-        .play-icon {
-            opacity: 0;
-            transition: opacity 0.2s;
-            font-size: 10px;
-        }
-
-        /* --- 7. Player Bar --- */
+        /* --- Fixed Responsive Player Bar --- */
         .player-bar {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 80px;
-            background: #111;
+            background: #0c0c0c;
             border-top: 2px solid var(--irish-green);
             z-index: 100;
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
-            gap: 20px;
         }
 
         .play-btn {
@@ -281,33 +156,12 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: transform 0.1s;
         }
 
-        .play-btn:active {
-            transform: scale(0.95);
-
-        }
-
-        /* --- Player Progress Bar --- */
-        .progress-wrapper {
-            flex-grow: 1;
-            margin-left: 20px;
-            margin-right: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            opacity: 0.5;
-            transition: opacity 0.2s;
-        }
-        .player-bar:hover .progress-wrapper, .progress-wrapper.active {
-            opacity: 1;
-        }
-        
         .progress-track {
             position: relative;
             width: 100%;
-            height: 10px; /* Hit area height */
+            height: 10px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -315,14 +169,17 @@
 
         .progress-line-bg {
             position: absolute;
-            left: 0; right: 0;
+            left: 0;
+            right: 0;
             height: 2px;
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
         }
 
         .progress-fill {
             position: absolute;
-            left: 0; top: 50%; transform: translateY(-50%);
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
             height: 2px;
             background: var(--irish-green);
             width: 0%;
@@ -331,21 +188,55 @@
 
         .progress-knob {
             position: absolute;
-            right: -4px; top: 50%; transform: translateY(-50%);
-            width: 8px; height: 8px;
+            right: -4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
             background: var(--irish-green);
-            display: none; /* Hidden until playing */
         }
-        
-        .progress-wrapper.active .progress-knob { display: block; }
 
-        .time-display {
-            font-size: 10px;
-            font-family: 'Space Mono', monospace;
-            color: var(--irish-green);
-            min-width: 100px;
-            text-align: right;
-            margin-left: auto;
+        /* Volume - Desktop Only */
+        .volume-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .volume-popup {
+            position: absolute;
+            bottom: 150%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 100px;
+            background: #111;
+            border: 2px solid var(--irish-green);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .volume-container.active .volume-popup {
+            display: flex;
+        }
+
+        input[type=range].volume-slider {
+            -webkit-appearance: none;
+            width: 70px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            transform: rotate(-90deg);
+        }
+
+        input[type=range].volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: var(--irish-green);
+            cursor: pointer;
         }
     </style>
 </head>
@@ -366,7 +257,6 @@
             <span class="text-xl font-bold tracking-tighter">BOGADH <span
                     class="text-xs ml-2 opacity-50 hidden md:inline">NYC / DUBLIN</span></span>
         </div>
-
         <div class="flex gap-6 text-xs uppercase tracking-widest font-bold relative z-10">
             <button onclick="switchView('home')" class="hover:text-[#009a44] transition-colors">Schedule</button>
             <button onclick="switchView('archive')" class="hover:text-[#009a44] transition-colors">Archive</button>
@@ -375,24 +265,21 @@
 
     <div class="marquee-container" id="marqueeContainer">
         <div class="marquee-content" id="marqueeContent">
-            LIVE ON NEWTOWN RADIO: BOGADH WITH MAX REBO • EVERY SECOND TUESDAY 18:00-20:00 EST • NEXT
-            BROADCAST: JAN 27 • LIVE ON NEWTOWN RADIO: BOGADH WITH MAX REBO • EVERY SECOND TUESDAY 18:00-20:00 EST • NEXT
-            BROADCAST: JAN 27 •
+            LIVE ON NEWTOWN RADIO: BOGADH WITH MAX REBO • EVERY SECOND TUESDAY 18:00-20:00 EST • NEXT BROADCAST: JAN 27
+            •
         </div>
     </div>
 
     <main class="relative z-20">
-
         <section id="home-view" class="view-section active">
             <div class="min-h-[70vh] flex flex-col items-center justify-center px-6 text-center">
-
                 <div
                     class="mb-4 text-emerald-500 text-sm flex items-center gap-2 relative z-30 font-bold uppercase tracking-widest">
                     <span id="headerIndicator" class="w-2 h-2 rounded-full bg-red-500 hidden animate-pulse"></span>
                     <span id="headerStatus">Checking Status...</span>
                 </div>
 
-                <div class="lofi-border p-12 bg-black/40 backdrop-blur-xl max-w-lg text-center relative z-30">
+                <div class="lofi-border p-8 md:p-12 bg-black/40 backdrop-blur-xl max-w-lg text-center relative z-30">
                     <p class="text-sm leading-relaxed mb-8 font-bold uppercase tracking-tight">
                         Bogadh [Moving] is a biweekly radio frequency broadcasting from New York City. Platforming Irish
                         DJs and friends of the station. Bridging the sonic gap between NYC and Dublin.
@@ -402,36 +289,15 @@
                         CHECKING STATUS...
                     </button>
                 </div>
-
-                <div class="mt-12 flex gap-12 text-[10px] uppercase opacity-40 font-bold tracking-widest relative z-30">
-                    <div>BGDH-NYC</div>
-                    <div>NEWTOWN RADIO</div>
-                    <div>BROOKLYN, NY</div>
-                </div>
             </div>
-
-            <section class="max-w-6xl mx-auto px-6 py-20 border-t border-white/10">
-                <h2 class="text-2xl font-black italic mb-12 uppercase tracking-tight">Upcoming Broadcasts</h2>
-                <div class="space-y-2">
-                    <div
-                        class="flex justify-between items-center p-4 border border-white/5 hover:border-[#009a44] transition-all cursor-pointer text-xs uppercase font-bold">
-                        <div class="flex gap-8 items-center">
-                            <span class="text-emerald-500 w-16">JAN 27</span>
-                            <span>BOGADH RADIO</span>
-                        </div>
-                        <span class="opacity-40">18:00 — 20:00 EST</span>
-                    </div>
-                </div>
-            </section>
         </section>
 
         <section id="archive-view" class="view-section py-20 px-6 max-w-7xl mx-auto">
             <div class="mb-12 flex flex-col md:flex-row justify-between items-end gap-8">
                 <div>
                     <h1 class="text-5xl font-black uppercase tracking-tighter">ARCHIVE</h1>
-                    <p class="text-emerald-500 font-bold text-[10px] mt-2 uppercase tracking-widest">
-                        Bogadh Series / Cartlann
-                    </p>
+                    <p class="text-emerald-500 font-bold text-[10px] mt-2 uppercase tracking-widest">Bogadh Series /
+                        Cartlann</p>
                 </div>
                 <div class="w-full md:w-96">
                     <input type="text" id="archiveSearch" placeholder="SEARCH RECORDS..."
@@ -439,479 +305,281 @@
                         onkeyup="filterLocalArchive()">
                 </div>
             </div>
-
-            <div class="mt-8">
-                <div class="archive-header px-2">
-                    <div class="col-date">Uploaded</div>
-                    <div class="col-artist">Show Title</div>
-                    <div class="col-play">Action</div>
-                </div>
-
-                <div id="archive-container">
-                    <div class="py-12 text-center text-xs uppercase animate-pulse opacity-50">
-                        Connecting to Mixcloud Database...
-                    </div>
+            <div id="archive-container">
+                <div class="py-12 text-center text-xs uppercase animate-pulse opacity-50">Connecting to Mixcloud...
                 </div>
             </div>
         </section>
     </main>
 
-    <div class="player-bar">
-        <div class="play-btn" id="masterPlayBtn" onclick="toggleGlobalPlay()">
-            <svg id="icon-play" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M4.5 3.5v13l11-6.5-11-6.5z" />
-            </svg>
-        
-            <svg id="icon-pause" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M5 4h4v12H5V4zm6 0h4v12h-4V4z" />
-            </svg>
-        </div>
-    
-        <div class="flex flex-col cursor-pointer max-w-[150px] md:max-w-[250px]" onclick="switchView('archive')">
-            <span id="playerStatus" class="text-xs font-bold uppercase tracking-widest text-emerald-500 truncate">
-                Checking Status...
-            </span>
-            <span id="playerShow" class="text-[10px] opacity-50 uppercase truncate">
-                Bogadh with Max Rebo
-            </span>
-        </div>
-    
-        <div id="progressContainer" class="progress-wrapper hidden" onclick="seekTrack(event)">
-            <div class="progress-track">
-                <div class="progress-line-bg"></div>
-                <div id="progressFill" class="progress-fill">
-                    <div class="progress-knob"></div>
-                </div>
-            </div>
-        </div>
-    
-        <div class="ml-auto flex items-center gap-4">
-    
-            <div id="timeDisplay" class="time-display hidden">00:00 / 00:00</div>
-    
-            <div id="volumeControl" class="volume-container">
-                <div class="volume-btn" onclick="toggleVolume()">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2"
-                            d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+    <div class="player-bar p-4 md:px-6">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-4">
+
+            <div class="flex items-center w-full md:w-auto gap-4">
+                <div class="play-btn shrink-0" id="masterPlayBtn" onclick="toggleGlobalPlay()">
+                    <svg id="icon-play" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M4.5 3.5v13l11-6.5-11-6.5z" />
+                    </svg>
+                    <svg id="icon-pause" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M5 4h4v12H5V4zm6 0h4v12h-4V4z" />
                     </svg>
                 </div>
-                <div class="volume-popup">
-                    <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="1"
-                        oninput="setVolume(this.value)">
+                <div class="flex flex-col min-w-0 flex-1">
+                    <span id="playerStatus"
+                        class="text-[10px] md:text-xs font-bold uppercase tracking-widest text-emerald-500 truncate">Checking
+                        Status...</span>
+                    <span id="playerShow"
+                        class="text-[9px] md:text-[10px] opacity-50 uppercase truncate max-w-[200px]">Bogadh with Max
+                        Rebo</span>
+                </div>
+                <div id="liveIndicatorMobile" class="hidden items-center md:hidden">
+                    <div class="flex gap-1 h-3 items-end">
+                        <div class="w-1 bg-emerald-500 animate-bounce"></div>
+                        <div class="w-1 bg-emerald-500 animate-bounce" style="animation-delay: 0.2s"></div>
+                    </div>
                 </div>
             </div>
-    
-            <div id="liveIndicator" class="hidden items-center gap-4">
-                <div class="flex gap-1 h-4 items-end">
-                    <div class="w-1 bg-emerald-500 animate-[bounce_1s_infinite]"></div>
-                    <div class="w-1 bg-emerald-500 animate-[bounce_1.2s_infinite]"></div>
-                    <div class="w-1 bg-emerald-500 animate-[bounce_0.8s_infinite]"></div>
+
+            <div id="progressContainer" class="hidden w-full md:flex md:flex-1 mt-3 md:mt-0" onclick="seekTrack(event)">
+                <div class="progress-track">
+                    <div class="progress-line-bg"></div>
+                    <div id="progressFill" class="progress-fill">
+                        <div class="progress-knob"></div>
+                    </div>
                 </div>
-                <span class="text-[10px] font-bold">LIVE</span>
+            </div>
+
+            <div class="flex items-center justify-between md:justify-end w-full md:w-auto gap-6">
+                <div id="timeDisplay" class="hidden text-[10px] font-mono text-emerald-500">00:00 / 00:00</div>
+
+                <div id="volumeControl" class="hidden md:flex volume-container">
+                    <div class="cursor-pointer opacity-70 hover:opacity-100" onclick="toggleVolume()">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-width="2"
+                                d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                        </svg>
+                    </div>
+                    <div class="volume-popup"><input type="range" class="volume-slider" min="0" max="1" step="0.01"
+                            value="1" oninput="setVolume(this.value)"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <footer
-        class="p-10 border-t border-white/10 text-[10px] text-center opacity-40 uppercase tracking-[0.3em] relative z-30">
-        Bogadh Radio © 2026 • Brooklyn • Dublin • Moving Together
-    </footer>
-
     <script>
-        // --- CONFIGURATION ---
         const CONFIG = {
             mixcloudUser: 'newtownradiobk',
             liveUrl: 'https://newtownradio.com/',
-            anchorDate: new Date("2026-01-13T18:00:00-05:00") // Biweekly Anchor
+            anchorDate: new Date("2026-01-13T18:00:00-05:00")
         };
 
-        // --- STATE MANAGEMENT ---
-        const APP_STATE = {
-            widgetReady: false,
-            isPlayingArchive: false,
-            isStationLive: false // Calculated every second
-        };
+        const APP_STATE = { widgetReady: false, isPlayingArchive: false, isStationLive: false };
+        let widget = null, progressInterval = null, archiveLoaded = false;
 
-        let widget = null;
-        let progressInterval = null;
-        let archiveLoaded = false;
-
-        // --- INITIALIZATION ---
         window.onload = () => {
-            // 1. Initialize Visuals
             initCanvas();
             drawCanvas();
             requestAnimationFrame(updateTicker);
-
-            // 2. Handle Deep Linking
             if (window.location.hash) switchView(window.location.hash.replace('#', ''));
 
-            // 3. Radio Automation
             setInterval(updateRadioStatus, 1000);
             updateRadioStatus();
-
-            // 4. Inject Mixcloud Widget
             injectMixcloudWidget();
         };
 
-        // --- MAIN PLAY BUTTON LOGIC ---
-        function toggleGlobalPlay() {
-            // Priority 1: If Archive is active (playing or paused), control the widget
-            if (APP_STATE.isPlayingArchive && widget) {
-                widget.togglePlay().then(() => {
-                    const isHidden = document.getElementById('icon-play').classList.contains('hidden');
-                    updatePlayIcon(!isHidden);
-                }).catch(e => console.warn("Toggle failed", e));
-                return;
-            }
-
-            // Priority 2: If Station is Live, go to external radio
-            if (APP_STATE.isStationLive) {
-                window.open(CONFIG.liveUrl, '_blank');
-                return;
-            }
-
-            // Priority 3: Otherwise (Countdown mode), go to Archive View
-            switchView('archive');
-        }
-
-        // --- TIMER & STATUS LOGIC ---
         function getNextShowTime(currentTime) {
             const msInTwoWeeks = 14 * 24 * 60 * 60 * 1000;
             const elapsed = currentTime.getTime() - CONFIG.anchorDate.getTime();
             const periodsPassed = Math.floor(elapsed / msInTwoWeeks);
             let target = new Date(CONFIG.anchorDate.getTime() + (periodsPassed * msInTwoWeeks));
-            const showEndTime = new Date(target.getTime() + (2 * 60 * 60 * 1000)); // 2 Hour show
-
+            const showEndTime = new Date(target.getTime() + (2 * 60 * 60 * 1000));
             if (currentTime > showEndTime) target = new Date(target.getTime() + msInTwoWeeks);
             return target;
         }
 
         function updateRadioStatus() {
-            // 1. Calculate Time
             const now = new Date();
             const nycTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
             const nextShow = getNextShowTime(nycTime);
-            
+
             const isShowDay = nycTime.toDateString() === nextShow.toDateString();
             const isLiveTime = nycTime.getHours() >= 18 && nycTime.getHours() < 20;
-
-            // 2. Update State
             APP_STATE.isStationLive = (isShowDay && isLiveTime);
 
-            // 3. UI Updates (Only if NOT listening to archive)
-            if (!APP_STATE.isPlayingArchive) {
-                updateLiveStatusUI(nycTime, nextShow, APP_STATE.isStationLive);
-            }
-        }
-
-        function updateLiveStatusUI(currentTime, nextTime, isLive) {
             const els = {
                 status: document.getElementById('playerStatus'),
                 headerStatus: document.getElementById('headerStatus'),
-                indicator: document.getElementById('liveIndicator'),
                 headerIndicator: document.getElementById('headerIndicator'),
                 btn: document.getElementById('liveButton'),
-                show: document.getElementById('playerShow'),
-                progress: document.getElementById('progressContainer'),
-                time: document.getElementById('timeDisplay')
+                mobileIndicator: document.getElementById('liveIndicatorMobile')
             };
 
-            // Ensure archive UI is hidden
-            els.progress.classList.add('hidden');
-            els.time.classList.add('hidden');
-            els.show.innerText = "Bogadh with Max Rebo"; // Reset Title
-
-            if (isLive) {
-                // HEADER
+            if (APP_STATE.isStationLive) {
                 els.headerStatus.innerText = "ON AIR: LIVE FROM BROOKLYN";
                 els.headerIndicator.classList.remove('hidden');
-                els.btn.innerText = "LISTEN LIVE / TÉIGH BEO";
-                els.btn.onclick = () => window.open(CONFIG.liveUrl, '_blank');
-
-                // PLAYER BAR
-                els.status.innerText = "Live Now on Newtown Radio";
-                els.status.classList.add('text-emerald-500');
-                els.indicator.classList.replace('hidden', 'flex');
+                els.btn.innerText = "LISTEN LIVE";
+                els.status.innerText = "LIVE NOW ON NEWTOWN RADIO";
+                if (els.mobileIndicator) els.mobileIndicator.classList.remove('hidden');
             } else {
-                // Countdown Calc
-                const diff = nextTime - currentTime;
-                const d = Math.floor(diff / (86400000));
-                const h = Math.floor((diff / 3600000) % 24);
-                const m = Math.floor((diff / 60000) % 60);
-                const s = Math.floor((diff / 1000) % 60);
+                const diff = nextShow - nycTime;
+                const d = Math.floor(diff / 86400000), h = Math.floor((diff / 3600000) % 24), m = Math.floor((diff / 60000) % 60), s = Math.floor((diff / 1000) % 60);
                 const timeStr = `${d}D ${h}H ${m}M ${s}S`;
 
-                // HEADER
-                els.headerStatus.innerText = `Next Broadcast: ${timeStr}`;
+                els.headerStatus.innerText = `NEXT BROADCAST: ${timeStr}`;
                 els.headerIndicator.classList.add('hidden');
                 els.btn.innerText = "LISTEN TO ARCHIVE";
-                els.btn.onclick = () => switchView('archive');
-
-                // PLAYER BAR
-                els.status.innerText = `Next Live in: ${timeStr}`;
-                els.status.classList.remove('text-emerald-500');
-                els.indicator.classList.replace('flex', 'hidden');
+                els.status.innerText = `NEXT LIVE IN: ${timeStr}`;
+                if (els.mobileIndicator) els.mobileIndicator.classList.add('hidden');
             }
         }
 
-        // --- PLAYER / WIDGET LOGIC ---
         function injectMixcloudWidget() {
             const iframe = document.createElement('iframe');
-            iframe.id = 'mixcloud-widget';
-            iframe.width = "100%";
-            iframe.height = "60";
-            iframe.src = `https://www.mixcloud.com/widget/iframe/?hide_cover=1&mini=1&light=1&feed=%2F${CONFIG.mixcloudUser}%2F`;
-            iframe.frameBorder = "0";
-            iframe.allow = "autoplay *; encrypted-media *; clipboard-write; fullscreen";
-
+            iframe.id = 'mixcloud-widget'; iframe.width = "1px"; iframe.height = "1px";
+            iframe.src = `https://www.mixcloud.com/widget/iframe/?hide_cover=1&mini=1&feed=%2F${CONFIG.mixcloudUser}%2F`;
             document.getElementById('widget-mount').appendChild(iframe);
+            widget = Mixcloud.PlayerWidget(iframe);
+            widget.ready.then(() => APP_STATE.widgetReady = true);
+        }
 
-            setTimeout(() => {
-                widget = Mixcloud.PlayerWidget(iframe);
-                widget.ready.then(() => {
-                    console.log("Mixcloud Widget Connected");
-                    APP_STATE.widgetReady = true;
-                }).catch(err => console.error("Widget Init Error:", err));
-            }, 500);
+        function toggleGlobalPlay() {
+            if (APP_STATE.isPlayingArchive && widget) {
+                widget.togglePlay();
+                widget.getIsPaused().then(paused => updatePlayIcon(!paused));
+                return;
+            }
+            if (APP_STATE.isStationLive) { window.open(CONFIG.liveUrl, '_blank'); return; }
+            switchView('archive');
         }
 
         function playArchiveTrack(key, title) {
-            if (!APP_STATE.widgetReady || !widget) {
-                console.warn("Player loading...");
-                return;
-            }
-
-            // Update State
             APP_STATE.isPlayingArchive = true;
-
-            // UI Feedback
-            document.getElementById('liveIndicator').classList.add('hidden');
-            const statusEl = document.getElementById('playerStatus');
-            statusEl.innerText = "LOADING...";
-            statusEl.classList.remove('text-emerald-500');
+            document.getElementById('playerStatus').innerText = "NOW PLAYING:";
             document.getElementById('playerShow').innerText = title;
-            document.querySelectorAll('.archive-list-row').forEach(el => el.classList.remove('playing'));
-
-            // Load & Play
             widget.load(key, true).then(() => {
-                statusEl.innerText = "NOW PLAYING:";
                 updatePlayIcon(true);
                 startProgressLoop();
-            }).catch(err => {
-                console.error("Load failed:", err);
-                statusEl.innerText = "CLICK PLAY >";
-                updatePlayIcon(false);
             });
         }
 
-        function updatePlayIcon(isPlaying) {
-            const playIcon = document.getElementById('icon-play');
-            const pauseIcon = document.getElementById('icon-pause');
-            if (isPlaying) {
-                playIcon.classList.add('hidden');
-                pauseIcon.classList.remove('hidden');
-            } else {
-                playIcon.classList.remove('hidden');
-                pauseIcon.classList.add('hidden');
-            }
-        }
-
-        // --- PROGRESS & SEEKING ---
-        function formatTime(seconds) {
-            if (!seconds || isNaN(seconds)) return "00:00";
-            const m = Math.floor(seconds / 60);
-            const s = Math.floor(seconds % 60);
-            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-        }
-
         function startProgressLoop() {
-            if (progressInterval) clearInterval(progressInterval);
-            
-            // Show UI elements
             document.getElementById('progressContainer').classList.remove('hidden');
-            document.getElementById('progressContainer').classList.add('active');
             document.getElementById('timeDisplay').classList.remove('hidden');
-
+            if (progressInterval) clearInterval(progressInterval);
             progressInterval = setInterval(() => {
-                if (!widget || !APP_STATE.isPlayingArchive) return;
                 Promise.all([widget.getPosition(), widget.getDuration()]).then(([pos, dur]) => {
-                    if (!dur) return;
-                    const percent = (pos / dur) * 100;
-                    document.getElementById('progressFill').style.width = `${percent}%`;
-                    document.getElementById('timeDisplay').innerText = `${formatTime(pos)} / ${formatTime(dur)}`;
+                    if (dur) {
+                        document.getElementById('progressFill').style.width = `${(pos / dur) * 100}%`;
+                        document.getElementById('timeDisplay').innerText = `${formatTime(pos)} / ${formatTime(dur)}`;
+                    }
                 });
             }, 1000);
         }
 
-        function seekTrack(e) {
-            if (!widget || !APP_STATE.isPlayingArchive) return;
-            const rect = e.currentTarget.getBoundingClientRect();
-            const percent = (e.clientX - rect.left) / rect.width;
-            
-            widget.getDuration().then(dur => {
-                widget.seek(dur * percent);
-                document.getElementById('progressFill').style.width = `${percent * 100}%`;
-            });
+        function formatTime(s) { return `${Math.floor(s / 60).toString().padStart(2, '0')}:${Math.floor(s % 60).toString().padStart(2, '0')}`; }
+
+        function updatePlayIcon(playing) {
+            document.getElementById('icon-play').classList.toggle('hidden', playing);
+            document.getElementById('icon-pause').classList.toggle('hidden', !playing);
         }
 
-        // --- ARCHIVE FETCHING ---
+        function switchView(id) {
+            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+            document.getElementById(id + '-view').classList.add('active');
+            if (id === 'archive' && !archiveLoaded) fetchMixcloudArchive();
+        }
+
         async function fetchMixcloudArchive() {
-            const container = document.getElementById('archive-container');
-            const apiUrl = `https://api.mixcloud.com/${CONFIG.mixcloudUser}/cloudcasts/?limit=100`;
-
             try {
-                const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
-
-                const filteredShows = data.data.filter(show =>
-                    show.name.toLowerCase().includes('bogadh')
-                );
-
-                container.innerHTML = ''; 
-
-                if (filteredShows.length === 0) {
-                    container.innerHTML = '<div class="py-12 text-center text-xs uppercase opacity-50">No "Bogadh" records found.</div>';
-                    return;
-                }
-
-                filteredShows.forEach(show => {
-                    const dateObj = new Date(show.created_time);
-                    const formattedDate = dateObj.toISOString().split('T')[0];
+                const res = await fetch(`https://api.mixcloud.com/${CONFIG.mixcloudUser}/cloudcasts/?limit=100`);
+                const data = await res.json();
+                const container = document.getElementById('archive-container');
+                container.innerHTML = '';
+                data.data.filter(s => s.name.toLowerCase().includes('bogadh')).forEach(s => {
                     const row = document.createElement('div');
-                    row.className = "archive-list-row group";
-                    row.onclick = () => playArchiveTrack(show.key, show.name);
-                    row.innerHTML = `
-                        <div class="col-date text-emerald-500/80">${formattedDate}</div>
-                        <div class="col-artist text-white group-hover:text-black">${show.name}</div>
-                        <div class="col-play"><span class="play-icon group-hover:opacity-100">PLAY ▶</span></div>
-                    `;
+                    row.className = "archive-list-row";
+                    row.onclick = () => playArchiveTrack(s.key, s.name);
+                    row.innerHTML = `<div class="col-date">${s.created_time.split('T')[0]}</div><div class="col-artist">${s.name}</div><div class="col-play">PLAY ▶</div>`;
                     container.appendChild(row);
                 });
                 archiveLoaded = true;
-            } catch (error) {
-                console.error("Error:", error);
-                container.innerHTML = '<div class="py-12 text-center text-xs uppercase text-red-500">Error connecting to archive.</div>';
-            }
+            } catch (e) { console.error(e); }
         }
 
-        function filterLocalArchive() {
-            const filter = document.getElementById('archiveSearch').value.toUpperCase();
-            const rows = document.getElementById('archive-container').getElementsByClassName('archive-list-row');
-            for (let i = 0; i < rows.length; i++) {
-                const txtValue = rows[i].textContent || rows[i].innerText;
-                rows[i].style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? "flex" : "none";
-            }
-        }
+        function toggleVolume() { document.getElementById('volumeControl').classList.toggle('active'); }
+        function setVolume(v) { if (widget) widget.setVolume(v); }
 
-        // --- VIEW MANAGEMENT ---
-        function switchView(viewId) {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-            document.getElementById(viewId + '-view').classList.add('active');
-            window.scrollTo(0, 0);
-
-            if (viewId === 'archive' && !archiveLoaded) fetchMixcloudArchive();
-            history.pushState(null, null, viewId === 'home' ? '#' : '#' + viewId);
-        }
-        window.onpopstate = () => switchView(window.location.hash.replace('#', '') || 'home');
-
-        // --- VOLUME ---
-        function toggleVolume() {
-            document.getElementById('volumeControl').classList.toggle('active');
-        }
-
-        function setVolume(val) {
-            if (widget) widget.setVolume(parseFloat(val));
-        }
-
-        window.addEventListener('click', (e) => {
-            const vol = document.getElementById('volumeControl');
-            if (vol && !vol.contains(e.target)) vol.classList.remove('active');
-        });
-
-        // --- VISUALS (MARQUEE & CANVAS) ---
-        const marqueeContainer = document.getElementById('marqueeContainer');
         const marqueeContent = document.getElementById('marqueeContent');
         let tickerPos = 0;
-        let isDraggingTicker = false;
-        let startX = 0;
-
         marqueeContent.innerHTML += " " + marqueeContent.innerHTML;
-
         function updateTicker() {
-            if (!isDraggingTicker) {
-                tickerPos -= 1.5; 
-                if (Math.abs(tickerPos) >= marqueeContent.offsetWidth / 2) tickerPos = 0;
-            }
+            tickerPos -= 1.5;
+            if (Math.abs(tickerPos) >= marqueeContent.offsetWidth / 2) tickerPos = 0;
             marqueeContent.style.transform = `translateX(${tickerPos}px)`;
             requestAnimationFrame(updateTicker);
         }
 
-        marqueeContainer.addEventListener('mousedown', (e) => { isDraggingTicker = true; startX = e.clientX; marqueeContainer.style.cursor = 'grabbing'; });
-        window.addEventListener('mousemove', (e) => { if (isDraggingTicker) { tickerPos += e.clientX - startX; startX = e.clientX; } });
-        window.addEventListener('mouseup', () => { if (isDraggingTicker) { isDraggingTicker = false; marqueeContainer.style.cursor = 'grab'; } });
-
-        // Canvas Setup
-        const canvas = document.getElementById('pixelCanvas');
-        const ctx = canvas.getContext('2d');
+        /* --- STATIC PIXEL BACKGROUND - NO MOVEMENT --- */
+        const canvas = document.getElementById('pixelCanvas'), ctx = canvas.getContext('2d');
         let width, height, pixels = [];
         const cellSize = 12;
-        let mouse = { x: -1000, y: -1000 };
 
         function initCanvas() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
-            const cols = Math.ceil(width / cellSize);
-            const rows = Math.ceil(height / cellSize);
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            const cols = Math.ceil(width / cellSize), rows = Math.ceil(height / cellSize);
             pixels = [];
             for (let y = 0; y < rows; y++) {
                 for (let x = 0; x < cols; x++) {
                     pixels.push({
-                        x: x * cellSize, y: y * cellSize,
-                        offsetX: 0, offsetY: 0,
-                        baseAlpha: Math.random() * 0.02, alpha: 0,
-                        frequency: 0.0005 + Math.random() * 0.001,
-                        offset: Math.random() * 1000
+                        x: x * cellSize,
+                        y: y * cellSize,
+                        alpha: Math.random() * 0.04
                     });
                 }
             }
         }
 
-        function drawCanvas() {
+       function drawCanvas() {
             ctx.clearRect(0, 0, width, height);
-            const now = Date.now();
+
+            // 1. Create a radial gradient for the "glow" effect
+            // This starts at the center of the screen and fades to black
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height) * 0.6);
+
+            // Core glow color (Irish Green)
+            gradient.addColorStop(0, 'rgba(0, 154, 68, 0.3)');
+            // Fades out to almost black
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
             pixels.forEach(p => {
-                const centerX = p.x + cellSize / 2;
-                const centerY = p.y + cellSize / 2;
-                const dist = Math.sqrt((mouse.x - centerX) ** 2 + (mouse.y - centerY) ** 2);
+                // 2. Calculate distance from center to determine brightness for THIS pixel
+                const dx = (p.x + cellSize / 2) - centerX;
+                const dy = (p.y + cellSize / 2) - centerY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
 
-                if (dist < 250) {
-                    const force = (1 - dist / 250);
-                    p.targetAlpha = p.baseAlpha + (Math.pow(force, 2) * 0.85);
-                    p.targetOffsetX = (mouse.x - centerX) * force * 0.15;
-                    p.targetOffsetY = (mouse.y - centerY) * force * 0.15;
-                } else {
-                    p.targetAlpha = p.baseAlpha + (Math.sin(now * p.frequency + p.offset) * 0.02);
-                    p.targetOffsetX = 0; p.targetOffsetY = 0;
-                }
+                // 3. Modulate the pixel's alpha based on its distance from the center glow
+                const glowFactor = Math.max(0, 1 - dist / (Math.max(width, height) * 0.5));
+                const finalAlpha = p.alpha + (glowFactor * 0.15); // Combine random flicker with center glow
 
-                p.alpha += (p.targetAlpha - p.alpha) * 0.08;
-                p.offsetX += (0 - p.offsetX) * 0.1; 
-                p.offsetY += (0 - p.offsetY) * 0.1;
-
-                if (p.alpha > 0.005) {
-                    ctx.fillStyle = `rgba(0, 154, 68, ${p.alpha})`;
-                    ctx.fillRect(p.x + p.offsetX + 2, p.y + p.offsetY + 2, cellSize - 4, cellSize - 4);
-                }
+                ctx.fillStyle = `rgba(0, 154, 68, ${finalAlpha})`;
+                ctx.fillRect(p.x + 2, p.y + 2, cellSize - 4, cellSize - 4);
             });
+
+            // 4. Optional: Draw the gradient over the top to soften the grid
+            ctx.globalCompositeOperation = 'screen';
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+            ctx.globalCompositeOperation = 'source-over';
+
             requestAnimationFrame(drawCanvas);
         }
-        window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
         window.addEventListener('resize', initCanvas);
+        initCanvas();
+        drawCanvas();
     </script>
 </body>
 
