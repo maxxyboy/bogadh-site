@@ -232,8 +232,7 @@
         /* Player Bar */
         .player-bar {
             position: fixed;
-            bottom: 0;
-            left: 0;
+            bottom: 0; left: 0;
             width: 100%;
             height: 80px;
             background: #111;
@@ -262,7 +261,7 @@
             transform: scale(0.95);
         }
 
-        /* Progress Bar */
+        /* --- Progress Bar --- */
         .progress-wrapper {
             flex-grow: 1;
             margin: 0 20px;
@@ -271,13 +270,13 @@
             justify-content: center;
             opacity: 0.5;
             transition: opacity 0.2s;
+            /* Ensure it sits above other elements if overlapped */
+            position: relative; 
+            z-index: 20; 
         }
-
-        .player-bar:hover .progress-wrapper,
-        .progress-wrapper.active {
-            opacity: 1;
-        }
-
+        
+        .player-bar:hover .progress-wrapper, .progress-wrapper.active { opacity: 1; }
+        
         .progress-track {
             position: relative;
             width: 100%;
@@ -289,17 +288,14 @@
 
         .progress-line-bg {
             position: absolute;
-            left: 0;
-            right: 0;
+            left: 0; right: 0;
             height: 2px;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255,255,255,0.2);
         }
 
         .progress-fill {
             position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
+            left: 0; top: 50%; transform: translateY(-50%);
             height: 2px;
             background: var(--irish-green);
             width: 0%;
@@ -308,19 +304,14 @@
 
         .progress-knob {
             position: absolute;
-            right: -4px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 8px;
-            height: 8px;
+            right: -4px; top: 50%; transform: translateY(-50%);
+            width: 8px; height: 8px;
             background: var(--irish-green);
             display: none;
         }
+        .progress-wrapper.active .progress-knob { display: block; }
 
-        .progress-wrapper.active .progress-knob {
-            display: block;
-        }
-
+        /* --- Time Display --- */
         .time-display {
             font-size: 10px;
             font-family: 'Space Mono', monospace;
@@ -328,6 +319,36 @@
             min-width: 100px;
             text-align: right;
             margin-left: auto;
+        }
+
+        /* =========================================
+           MOBILE SPECIFIC FIXES
+           ========================================= */
+        @media (max-width: 768px) {
+            .player-bar {
+                height: 70px; /* Slightly more compact */
+                padding: 0 15px; /* Tighter edges */
+                gap: 10px; /* Reduce gap between elements */
+            }
+
+            /* Move Progress Bar to the absolute top edge */
+            .progress-wrapper {
+                position: absolute;
+                top: -1px; /* Align perfectly with border */
+                left: 0;
+                width: 100%;
+                margin: 0;
+                height: 4px; /* Thin line */
+            }
+
+            /* Make the hit area taller for easy touching, but visual line thin */
+            .progress-track { height: 100%; }
+            .progress-line-bg { height: 100%; background: rgba(255,255,255,0.1); }
+            .progress-fill { height: 100%; }
+            .progress-knob { display: none !important; } /* Hide knob on mobile for clean look */
+
+            /* Hide Time Display on Mobile to save space */
+            .time-display { display: none; }
         }
 
         /* Widget Mount */
@@ -341,6 +362,38 @@
             pointer-events: none;
             z-index: -10;
         }
+
+
+    /* --- Mobile Marquee Animation --- */
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .mobile-marquee-container {
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+            width: 100%;
+            height: 100%; /* Fill the container */
+            display: flex;
+            align-items: center;
+        }
+
+        .mobile-marquee-text {
+            display: inline-block;
+            animation: marquee 8s linear infinite;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: var(--irish-green);
+        }
+
+        /* Adjust animation speed based on screen width if needed */
+        @media (max-width: 768px) {
+            .player-bar { padding: 0 15px; gap: 15px; }
+        }
+
     </style>
 </head>
 
@@ -459,13 +512,23 @@
             </svg>
         </button>
 
-        <div id="playerInfo" class="flex flex-col cursor-pointer max-w-[150px] md:max-w-[250px]">
-            <span id="playerStatus" class="text-xs font-bold uppercase tracking-widest text-emerald-500 truncate">
-                Checking Status...
-            </span>
-            <span id="playerShow" class="text-[10px] opacity-50 uppercase truncate">
-                Bogadh with Max Rebo
-            </span>
+        <div id="playerInfo"
+            class="flex-1 min-w-0 px-3 cursor-pointer overflow-hidden relative h-[40px] md:h-auto flex flex-col justify-center">
+        
+            <div class="hidden md:flex flex-col">
+                <span id="playerStatus" class="text-xs font-bold uppercase tracking-widest text-emerald-500 truncate">
+                    Checking Status...
+                </span>
+                <span id="playerShow" class="text-[10px] opacity-50 uppercase truncate">
+                    Bogadh with Max Rebo
+                </span>
+            </div>
+        
+            <div class="md:hidden mobile-marquee-container">
+                <div id="mobileMarqueeText" class="mobile-marquee-text">
+                    CHECKING STATUS... • BOGADH WITH MAX REBO
+                </div>
+            </div>
         </div>
 
         <div id="progressContainer" class="progress-wrapper hidden">
@@ -535,7 +598,7 @@
                 Player.init();
                 Schedule.init();
                 Archive.init();
-                UI.bindEvents();
+                UI.bindEvents(); // This will now run correctly!
             }
         };
 
@@ -563,6 +626,23 @@
                     this.widget.ready.then(() => {
                         console.log("Audio Engine Ready");
                         APP.state.widgetReady = true;
+
+                        // Event Listeners for Truth-Based UI
+                        this.widget.events.play.on(() => {
+                            this.updatePlayIcon(true);
+                            this.startProgressLoop();
+                            const currentTitle = document.getElementById('playerShow').innerText;
+                            UI.updatePlayerInfo("NOW PLAYING:", currentTitle);
+                        });
+
+                        this.widget.events.pause.on(() => {
+                            this.updatePlayIcon(false);
+                        });
+
+                        this.widget.events.ended.on(() => {
+                            this.updatePlayIcon(false);
+                            UI.updatePlayerInfo("SHOW ENDED", "Bogadh with Max Rebo");
+                        });
                     });
                 }, 500);
             },
@@ -570,9 +650,7 @@
             toggleGlobalPlay() {
                 // 1. Archive Control
                 if (APP.state.isPlayingArchive && this.widget) {
-                    this.widget.togglePlay().then(() => {
-                        this.updatePlayIconStatus();
-                    });
+                    this.widget.togglePlay();
                     return;
                 }
 
@@ -590,30 +668,23 @@
                 if (!APP.state.widgetReady) return;
 
                 APP.state.isPlayingArchive = true;
+                UI.updatePlayerInfo("LOADING...", title);
 
-                // UI Updates
                 document.getElementById('liveIndicator').classList.add('hidden');
-                document.getElementById('playerStatus').innerText = "LOADING...";
-                document.getElementById('playerStatus').classList.remove('text-emerald-500');
-                document.getElementById('playerShow').innerText = title;
-
-                // Reset Rows
                 document.querySelectorAll('.archive-list-row').forEach(el => el.classList.remove('playing'));
 
                 this.widget.load(key, true).then(() => {
-                    document.getElementById('playerStatus').innerText = "NOW PLAYING:";
-                    this.updatePlayIcon(true);
-                    this.startProgressLoop();
+                    setTimeout(() => {
+                        this.widget.getIsPaused().then(isPaused => {
+                            if (isPaused) {
+                                UI.updatePlayerInfo("READY / CLICK PLAY", title);
+                            }
+                        });
+                    }, 500);
                 }).catch(() => {
-                    document.getElementById('playerStatus').innerText = "ERROR LOADING";
+                    UI.updatePlayerInfo("ERROR LOADING", title);
                     this.updatePlayIcon(false);
                 });
-            },
-
-            updatePlayIconStatus() {
-                // Check hidden class on play icon to determine state
-                const isHidden = document.getElementById('icon-play').classList.contains('hidden');
-                this.updatePlayIcon(!isHidden);
             },
 
             updatePlayIcon(isPlaying) {
@@ -630,17 +701,15 @@
 
             startProgressLoop() {
                 if (this.progressInterval) clearInterval(this.progressInterval);
-
                 const container = document.getElementById('progressContainer');
                 const timeDisplay = document.getElementById('timeDisplay');
 
                 container.classList.remove('hidden');
                 container.classList.add('active');
-                timeDisplay.classList.remove('hidden');
+                if (window.innerWidth > 768) timeDisplay.classList.remove('hidden');
 
                 this.progressInterval = setInterval(() => {
                     if (!this.widget || !APP.state.isPlayingArchive) return;
-
                     Promise.all([this.widget.getPosition(), this.widget.getDuration()]).then(([pos, dur]) => {
                         if (!dur) return;
                         const percent = (pos / dur) * 100;
@@ -654,7 +723,6 @@
                 if (!this.widget || !APP.state.isPlayingArchive) return;
                 const rect = e.currentTarget.getBoundingClientRect();
                 const percent = (e.clientX - rect.left) / rect.width;
-
                 this.widget.getDuration().then(dur => {
                     this.widget.seek(dur * percent);
                     document.getElementById('progressFill').style.width = `${percent * 100}%`;
@@ -686,13 +754,9 @@
                 const msInTwoWeeks = 14 * 24 * 60 * 60 * 1000;
                 const elapsed = currentTime.getTime() - CONFIG.anchorDate.getTime();
                 const periodsPassed = Math.floor(elapsed / msInTwoWeeks);
-
                 let target = new Date(CONFIG.anchorDate.getTime() + (periodsPassed * msInTwoWeeks));
                 const showEndTime = new Date(target.getTime() + (2 * 60 * 60 * 1000));
-
-                if (currentTime > showEndTime) {
-                    target = new Date(target.getTime() + msInTwoWeeks);
-                }
+                if (currentTime > showEndTime) target = new Date(target.getTime() + msInTwoWeeks);
                 return target;
             },
 
@@ -700,14 +764,26 @@
                 const now = new Date();
                 const nycTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
                 const nextShow = this.getNextShowTime(nycTime);
-
                 const isShowDay = nycTime.toDateString() === nextShow.toDateString();
-                const isLiveTime = nycTime.getHours() >= 18 && nycTime.getHours() < 20; // 6pm-8pm
+                const isLiveTime = nycTime.getHours() >= 18 && nycTime.getHours() < 20;
 
                 APP.state.isStationLive = (isShowDay && isLiveTime);
 
+                // Calculate Time String Here to prevent errors
+                const diff = nextShow - nycTime;
+                const d = Math.floor(diff / (86400000));
+                const h = Math.floor((diff / 3600000) % 24);
+                const m = Math.floor((diff / 60000) % 60);
+                const s = Math.floor((diff / 1000) % 60);
+                const timeStr = `${d}D ${h}H ${m}M ${s}S`;
+
                 if (!APP.state.isPlayingArchive) {
-                    UI.updateLiveStatus(nycTime, nextShow, APP.state.isStationLive);
+                    UI.updateLiveStatus(nycTime, nextShow, APP.state.isStationLive, timeStr);
+
+                    // Now timeStr is defined, so this won't crash
+                    const statusText = APP.state.isStationLive ? "Live Now on Newtown Radio" : `Next Live in: ${timeStr}`;
+                    const showTitle = "Bogadh with Max Rebo";
+                    UI.updatePlayerInfo(statusText, showTitle);
                 }
             }
         };
@@ -717,26 +793,18 @@
          */
         const Archive = {
             init() {
-                // Initialize search filter listener
                 const searchInput = document.getElementById('archiveSearch');
-                if (searchInput) {
-                    searchInput.addEventListener('keyup', this.filter.bind(this));
-                }
+                if (searchInput) searchInput.addEventListener('keyup', this.filter.bind(this));
             },
 
             async fetch() {
                 const container = document.getElementById('archive-container');
                 const apiUrl = `https://api.mixcloud.com/${CONFIG.mixcloudUser}/cloudcasts/?limit=100`;
-
                 try {
                     const response = await fetch(apiUrl);
                     if (!response.ok) throw new Error('API Error');
                     const data = await response.json();
-
-                    const filteredShows = data.data.filter(show =>
-                        show.name.toLowerCase().includes('bogadh')
-                    );
-
+                    const filteredShows = data.data.filter(show => show.name.toLowerCase().includes('bogadh'));
                     container.innerHTML = '';
 
                     if (filteredShows.length === 0) {
@@ -747,24 +815,16 @@
                     filteredShows.forEach(show => {
                         const dateObj = new Date(show.created_time);
                         const formattedDate = dateObj.toISOString().split('T')[0];
-
                         const row = document.createElement('div');
                         row.className = "archive-list-row group";
-                        row.innerHTML = `
-                            <div class="col-date text-emerald-500/80">${formattedDate}</div>
-                            <div class="col-artist text-white group-hover:text-black">${show.name}</div>
-                            <div class="col-play"><span class="play-icon group-hover:opacity-100">PLAY ▶</span></div>
-                        `;
-
-                        // Add click listener purely via JS
+                        row.innerHTML = `<div class="col-date text-emerald-500/80">${formattedDate}</div>
+                                             <div class="col-artist text-white group-hover:text-black">${show.name}</div>
+                                             <div class="col-play"><span class="play-icon group-hover:opacity-100">PLAY ▶</span></div>`;
                         row.addEventListener('click', () => Player.loadTrack(show.key, show.name));
                         container.appendChild(row);
                     });
-
                     APP.state.archiveLoaded = true;
-
                 } catch (error) {
-                    console.error(error);
                     container.innerHTML = '<div class="py-12 text-center text-xs uppercase text-red-500">Error connecting to archive.</div>';
                 }
             },
@@ -784,17 +844,14 @@
          */
         const UI = {
             bindEvents() {
-                // Nav
                 document.getElementById('nav-logo').addEventListener('click', () => this.switchView('home'));
                 document.getElementById('nav-schedule').addEventListener('click', () => this.switchView('home'));
                 document.getElementById('nav-archive').addEventListener('click', () => this.switchView('archive'));
                 document.getElementById('playerInfo').addEventListener('click', () => this.switchView('archive'));
 
-                // Player Controls
                 document.getElementById('masterPlayBtn').addEventListener('click', () => Player.toggleGlobalPlay());
                 document.getElementById('progressTrack').addEventListener('click', (e) => Player.seek(e));
 
-                // Volume
                 const volControl = document.getElementById('volumeControl');
                 document.getElementById('volumeBtn').addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -802,18 +859,15 @@
                 });
                 document.getElementById('volumeSlider').addEventListener('input', (e) => Player.setVolume(e.target.value));
 
-                // Close volume on outside click
                 window.addEventListener('click', (e) => {
                     if (!volControl.contains(e.target)) volControl.classList.remove('active');
                 });
 
-                // Deep Linking
                 window.addEventListener('popstate', () => {
                     const view = window.location.hash.replace('#', '') || 'home';
                     this.switchView(view, false);
                 });
 
-                // Init load from hash
                 if (window.location.hash) this.switchView(window.location.hash.replace('#', ''));
             },
 
@@ -821,19 +875,12 @@
                 document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
                 const activeSection = document.getElementById(viewId + '-view');
                 if (activeSection) activeSection.classList.add('active');
-
                 window.scrollTo(0, 0);
-
-                if (viewId === 'archive' && !APP.state.archiveLoaded) {
-                    Archive.fetch();
-                }
-
-                if (updateHistory) {
-                    history.pushState(null, null, viewId === 'home' ? '#' : '#' + viewId);
-                }
+                if (viewId === 'archive' && !APP.state.archiveLoaded) Archive.fetch();
+                if (updateHistory) history.pushState(null, null, viewId === 'home' ? '#' : '#' + viewId);
             },
 
-            updateLiveStatus(currentTime, nextTime, isLive) {
+            updateLiveStatus(currentTime, nextTime, isLive, timeStr) {
                 const els = {
                     status: document.getElementById('playerStatus'),
                     headerStatus: document.getElementById('headerStatus'),
@@ -845,45 +892,51 @@
                     time: document.getElementById('timeDisplay')
                 };
 
-                // Hide archive specific UI
                 els.progress.classList.add('hidden');
                 els.time.classList.add('hidden');
                 els.show.innerText = "Bogadh with Max Rebo";
 
                 if (isLive) {
-                    // Live State
                     els.headerStatus.innerText = "ON AIR: LIVE FROM BROOKLYN";
                     els.headerIndicator.classList.remove('hidden');
                     els.btn.innerText = "LISTEN LIVE / TÉIGH BEO";
-                    els.btn.onclick = () => window.open(CONFIG.liveUrl, '_blank'); // Keeping explicit for button logic
-
+                    els.btn.onclick = () => window.open(CONFIG.liveUrl, '_blank');
                     els.status.innerText = "Live Now on Newtown Radio";
                     els.status.classList.add('text-emerald-500');
                     els.indicator.classList.replace('hidden', 'flex');
                 } else {
-                    // Countdown State
-                    const diff = nextTime - currentTime;
-                    const d = Math.floor(diff / (86400000));
-                    const h = Math.floor((diff / 3600000) % 24);
-                    const m = Math.floor((diff / 60000) % 60);
-                    const s = Math.floor((diff / 1000) % 60);
-                    const timeStr = `${d}D ${h}H ${m}M ${s}S`;
-
                     els.headerStatus.innerText = `Next Broadcast: ${timeStr}`;
                     els.headerIndicator.classList.add('hidden');
                     els.btn.innerText = "LISTEN TO ARCHIVE";
                     els.btn.onclick = () => this.switchView('archive');
-
                     els.status.innerText = `Next Live in: ${timeStr}`;
                     els.status.classList.remove('text-emerald-500');
                     els.indicator.classList.replace('flex', 'hidden');
                 }
+            },
+
+            updatePlayerInfo(status, title) {
+                const statusEl = document.getElementById('playerStatus');
+                const showEl = document.getElementById('playerShow');
+                if (statusEl) statusEl.innerText = status;
+                if (showEl) showEl.innerText = title;
+
+                const marqueeEl = document.getElementById('mobileMarqueeText');
+                if (marqueeEl) marqueeEl.innerText = `${status} • ${title}`;
+
+                if (status.includes("LIVE") || status.includes("NOW PLAYING")) {
+                    statusEl.classList.add('text-emerald-500');
+                    if (marqueeEl) marqueeEl.style.color = 'var(--irish-green)';
+                } else {
+                    statusEl.classList.remove('text-emerald-500');
+                    if (marqueeEl) marqueeEl.style.color = 'rgba(255,255,255,0.7)';
+                }
             }
         };
 
-    /**
-   * MODULE: VISUALS (Canvas & Marquee)
-   */
+        /**
+         * MODULE: VISUALS (Canvas & Marquee)
+         */
         const Visuals = {
             init() {
                 this.initMarquee();
@@ -896,9 +949,7 @@
                 let tickerPos = 0;
                 let isDragging = false;
                 let startX = 0;
-
                 content.innerHTML += " " + content.innerHTML;
-
                 const updateTicker = () => {
                     if (!isDragging) {
                         tickerPos -= 1.5;
@@ -908,7 +959,6 @@
                     requestAnimationFrame(updateTicker);
                 };
                 requestAnimationFrame(updateTicker);
-
                 container.addEventListener('mousedown', (e) => { isDragging = true; startX = e.clientX; container.style.cursor = 'grabbing'; });
                 window.addEventListener('mousemove', (e) => { if (isDragging) { tickerPos += e.clientX - startX; startX = e.clientX; } });
                 window.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; container.style.cursor = 'grab'; } });
@@ -920,20 +970,13 @@
                 let width, height, pixels = [];
                 const cellSize = 12;
 
-                // Target the specific "Feature" box shown in your image
                 const getTargetCenter = () => {
                     const targetBox = document.querySelector('#home-view .lofi-border');
-
-                    // Only lock if the box exists and is actually visible (has width)
                     if (targetBox && targetBox.offsetParent !== null) {
                         const rect = targetBox.getBoundingClientRect();
-                        return {
-                            x: rect.left + rect.width / 2,
-                            y: rect.top + rect.height / 2,
-                            active: true
-                        };
+                        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, active: true };
                     }
-                    return { x: -1000, y: -1000, active: false }; // Off-screen if hidden
+                    return { x: -1000, y: -1000, active: false };
                 };
 
                 const setup = () => {
@@ -947,11 +990,9 @@
                     for (let y = 0; y < rows; y++) {
                         for (let x = 0; x < cols; x++) {
                             pixels.push({
-                                x: x * cellSize, y: y * cellSize,
-                                offsetX: 0, offsetY: 0,
+                                x: x * cellSize, y: y * cellSize, offsetX: 0, offsetY: 0,
                                 baseAlpha: Math.random() * 0.02, alpha: 0,
-                                frequency: 0.0005 + Math.random() * 0.001,
-                                offset: Math.random() * 1000
+                                frequency: 0.0005 + Math.random() * 0.001, offset: Math.random() * 1000
                             });
                         }
                     }
@@ -960,33 +1001,23 @@
                 const draw = () => {
                     ctx.clearRect(0, 0, width, height);
                     const now = Date.now();
-
-                    // Calculate target position for this frame
                     const target = getTargetCenter();
-
                     pixels.forEach(p => {
                         const pixelCenterX = p.x + cellSize / 2;
                         const pixelCenterY = p.y + cellSize / 2;
-
-                        // Calculate distance to the Box Center instead of mouse/screen center
                         const dist = Math.sqrt((target.x - pixelCenterX) ** 2 + (target.y - pixelCenterY) ** 2);
-
-                        // Only apply "glow" force if target is active (Home View)
                         if (target.active && dist < 400) {
                             const force = (1 - dist / 400);
                             p.targetAlpha = p.baseAlpha + (Math.pow(force, 2) * 0.85);
                             p.targetOffsetX = (target.x - pixelCenterX) * force * 0.15;
                             p.targetOffsetY = (target.y - pixelCenterY) * force * 0.15;
                         } else {
-                            // Idle state (or when looking at Archive)
                             p.targetAlpha = p.baseAlpha + (Math.sin(now * p.frequency + p.offset) * 0.02);
                             p.targetOffsetX = 0; p.targetOffsetY = 0;
                         }
-
                         p.alpha += (p.targetAlpha - p.alpha) * 0.08;
                         p.offsetX += (0 - p.offsetX) * 0.1;
                         p.offsetY += (0 - p.offsetY) * 0.1;
-
                         if (p.alpha > 0.005) {
                             ctx.fillStyle = `rgba(0, 154, 68, ${p.alpha})`;
                             ctx.fillRect(p.x + p.offsetX + 2, p.y + p.offsetY + 2, cellSize - 4, cellSize - 4);
@@ -994,16 +1025,12 @@
                     });
                     requestAnimationFrame(draw);
                 };
-
                 window.addEventListener('resize', setup);
-
                 setup();
                 draw();
             }
         };
 
-
-        // --- Start Application ---
         window.onload = () => APP.init();
 
     </script>
