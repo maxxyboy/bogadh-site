@@ -324,6 +324,8 @@
 
 
         /* --- MOBILE Revolver Scrubber --- */
+
+        
         .revolver-wrapper {
             position: relative;
             width: 100%;
@@ -338,6 +340,12 @@
             -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
             touch-action: none;
             /* Prevent scrolling while scrubbing */
+        }
+
+        /* Add this to your existing CSS styles */
+        .mask-linear {
+            mask-image: linear-gradient(to right, black 85%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
         }
 
         .revolver-wrapper:active {
@@ -441,10 +449,6 @@
             text-transform: uppercase;
             color: var(--irish-green);
         }
-
-        
-
-        
     </style>
 </head>
 
@@ -557,11 +561,18 @@
         </button>
 
         <div id="playerInfoMobile" class="flex-1 min-w-0 px-2 flex flex-col justify-center gap-1 md:hidden">
-            <div class="mobile-marquee-container">
-                <div id="mobileMarqueeText" class="mobile-marquee-text">
-                    CHECKING STATUS... • BOGADH WITH MAX REBO
+            <div class="flex justify-between items-end w-full">
+                <div class="mobile-marquee-container flex-1 mr-2 mask-linear">
+                    <div id="mobileMarqueeText" class="mobile-marquee-text">
+                        CHECKING STATUS... • BOGADH WITH MAX REBO
+                    </div>
+                </div>
+                <div id="mobileTimeDisplay"
+                    class="text-[10px] font-mono text-[#009a44] font-bold shrink-0 tracking-tight leading-none">
+                    00:00 / 00:00
                 </div>
             </div>
+        
             <div class="revolver-wrapper" id="revolverScrubber">
                 <div class="revolver-track" id="revolverTrack"></div>
                 <div class="revolver-needle-container"></div>
@@ -742,7 +753,11 @@
 
             startProgressLoop() {
                 if (this.progressInterval) clearInterval(this.progressInterval);
+
+                // Get both display elements
                 const timeDisplay = document.getElementById('timeDisplay');
+                const mobileTimeDisplay = document.getElementById('mobileTimeDisplay'); // <--- NEW
+
                 const revolverTrack = document.getElementById('revolverTrack');
                 const desktopFill = document.getElementById('desktopProgressFill');
 
@@ -761,11 +776,7 @@
                         const percent = (pos / dur) * 100;
 
                         // Update Mobile Revolver (Moving Background)
-                        // Map 0-100% to a background position. 
-                        // Negative value moves background Left (advancing time)
                         if (revolverTrack) {
-                            // Scale factor to make the ticks move visibly. 
-                            // 100% progress = -500px background shift (arbitrary scale for visuals)
                             const bgOffset = percent * -5;
                             revolverTrack.style.backgroundPosition = `${bgOffset}px center`;
                         }
@@ -773,7 +784,14 @@
                         // Update Desktop Bar (Filling Bar)
                         if (desktopFill) desktopFill.style.width = `${percent}%`;
 
-                        timeDisplay.innerText = `${this.formatTime(pos)} / ${this.formatTime(dur)}`;
+                        // Update Time Strings
+                        const timeString = `${this.formatTime(pos)} / ${this.formatTime(dur)}`;
+
+                        // Update Desktop
+                        if (timeDisplay) timeDisplay.innerText = timeString;
+
+                        // Update Mobile (New)
+                        if (mobileTimeDisplay) mobileTimeDisplay.innerText = timeString;
                     });
                 }, 1000);
             },
