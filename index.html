@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" href="images/favicon.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://widget.mixcloud.com/media/js/widgetApi.js"></script>
+    <script src="https://w.soundcloud.com/player/api.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -324,25 +324,18 @@
 
 
         /* --- MOBILE Revolver Scrubber --- */
-
-        
         .revolver-wrapper {
             position: relative;
             width: 100%;
             height: 30px;
-            /* Touch target height */
             margin-top: 6px;
             cursor: grab;
-            /* Indicates interaction */
             overflow: hidden;
-            /* Fade Edges */
             mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
             -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
             touch-action: none;
-            /* Prevent scrolling while scrubbing */
         }
 
-        /* Add this to your existing CSS styles */
         .mask-linear {
             mask-image: linear-gradient(to right, black 85%, transparent 100%);
             -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
@@ -359,35 +352,25 @@
             transform: translateY(-50%);
             width: 100%;
             height: 16px;
-            /* Ticks */
             background-image: repeating-linear-gradient(90deg,
                     rgba(255, 255, 255, 0.15) 0px,
                     rgba(255, 255, 255, 0.15) 1px,
                     transparent 1px,
-                    transparent 8px
-                    /* Density of ticks */
-                );
+                    transparent 8px);
             opacity: 0.6;
             will-change: background-position;
-            /* Optimization */
         }
 
-        /* The Static Center Needle */
         .revolver-needle-container {
             position: absolute;
             top: 0;
             left: 50%;
-            /* Center of container */
             transform: translateX(-50%);
-            /* Perfectly center */
             height: 100%;
             width: 2px;
-            /* Needle Width */
             background: var(--irish-green);
-            /* Solid Green Line */
             pointer-events: none;
             box-shadow: 0 0 8px var(--irish-green);
-            /* Glow */
             z-index: 10;
         }
 
@@ -527,7 +510,7 @@
                 <div>
                     <h1 class="text-5xl font-black uppercase tracking-tighter">ARCHIVE</h1>
                     <p class="text-emerald-500 font-bold text-[10px] mt-2 uppercase tracking-widest">
-                        Bogadh Series / Cartlann
+                        SoundCloud Archive / Cartlann
                     </p>
                 </div>
                 <div class="w-full md:w-96">
@@ -543,7 +526,7 @@
                 </div>
                 <div id="archive-container">
                     <div class="py-12 text-center text-xs uppercase animate-pulse opacity-50">
-                        Connecting to Mixcloud Database...
+                        Loading SoundCloud Feed...
                     </div>
                 </div>
             </div>
@@ -572,7 +555,7 @@
                     00:00 / 00:00
                 </div>
             </div>
-        
+
             <div class="revolver-wrapper" id="revolverScrubber">
                 <div class="revolver-track" id="revolverTrack"></div>
                 <div class="revolver-needle-container"></div>
@@ -632,10 +615,15 @@
         /**
          * BOGADH RADIO APPLICATION
          * ------------------------
+         * Migrated to SoundCloud Engine (RSS Method)
          */
 
         const CONFIG = {
-            mixcloudUser: 'newtownradiobk',
+            // !!! IMPORTANT: YOU MUST FIND YOUR NUMERIC USER ID !!!
+            // 1. Go to your SoundCloud profile.
+            // 2. Click Share on the profile -> Click Embed.
+            // 3. Look for code like: users%2F123456789. The number is your ID.
+            soundcloudUserId: '1663555616', // <--- REPLACE THIS WITH REAL ID
             liveUrl: 'https://newtownradio.com/',
             anchorDate: new Date("2026-01-13T18:00:00-05:00")
         };
@@ -646,7 +634,7 @@
                 isPlayingArchive: false,
                 isStationLive: false,
                 archiveLoaded: false,
-                isDragging: false // New State for Scrubber
+                isDragging: false
             },
 
             init() {
@@ -661,51 +649,49 @@
         const Player = {
             widget: null,
             progressInterval: null,
-            trackDuration: 0, // Store duration
+            trackDuration: 0, // In Milliseconds for SoundCloud
 
             init() {
                 const iframe = document.createElement('iframe');
-                iframe.id = 'mixcloud-widget';
+                iframe.id = 'sc-widget';
                 iframe.style.width = "100%";
-                iframe.style.height = "60px";
-                iframe.src = `https://www.mixcloud.com/widget/iframe/?hide_cover=1&mini=1&light=1&feed=%2F${CONFIG.mixcloudUser}%2F`;
-                iframe.frameBorder = "0";
-                iframe.allow = "autoplay *; encrypted-media *; clipboard-write; fullscreen";
+                iframe.style.height = "166px";
+                iframe.setAttribute('allow', 'autoplay');
+                // Initial Load (User Profile)
+                iframe.src = `https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/users/${CONFIG.soundcloudUserId}&color=%23009a44&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=false`;
+
                 document.getElementById('widget-mount').appendChild(iframe);
 
                 setTimeout(() => {
-                    this.widget = Mixcloud.PlayerWidget(iframe);
-                    this.widget.ready.then(() => {
-                        console.log("Audio Engine Ready");
+                    this.widget = SC.Widget(iframe);
+
+                    this.widget.bind(SC.Widget.Events.READY, () => {
+                        console.log("SoundCloud Audio Engine Ready");
                         APP.state.widgetReady = true;
+                    });
 
-                        this.widget.events.play.on(() => {
-                            this.updatePlayIcon(true);
-                            this.startProgressLoop();
-                            const currentTitle = document.getElementById('playerShow').innerText;
-                            UI.updatePlayerInfo("NOW PLAYING:", currentTitle);
-                        });
-
-                        this.widget.events.pause.on(() => {
-                            this.updatePlayIcon(false);
-                        });
-
-                        this.widget.events.ended.on(() => {
-                            this.updatePlayIcon(false);
-                            UI.updatePlayerInfo("SHOW ENDED", "Bogadh with Max Rebo");
-                        });
-
-                        // Cache Duration when loaded
-                        this.widget.events.progress.on((p, d) => {
-                            this.trackDuration = d;
+                    this.widget.bind(SC.Widget.Events.PLAY, () => {
+                        this.updatePlayIcon(true);
+                        this.startProgressLoop();
+                        this.widget.getCurrentSound((sound) => {
+                            if (sound) UI.updatePlayerInfo("NOW PLAYING:", sound.title);
                         });
                     });
-                }, 500);
+
+                    this.widget.bind(SC.Widget.Events.PAUSE, () => {
+                        this.updatePlayIcon(false);
+                    });
+
+                    this.widget.bind(SC.Widget.Events.FINISH, () => {
+                        this.updatePlayIcon(false);
+                        UI.updatePlayerInfo("SHOW ENDED", "Bogadh with Max Rebo");
+                    });
+                }, 1000);
             },
 
             toggleGlobalPlay() {
                 if (APP.state.isPlayingArchive && this.widget) {
-                    this.widget.togglePlay();
+                    this.widget.toggle();
                     return;
                 }
                 if (APP.state.isStationLive) {
@@ -715,7 +701,7 @@
                 UI.switchView('archive');
             },
 
-            loadTrack(key, title) {
+            loadTrack(url, title) {
                 if (!APP.state.widgetReady) return;
 
                 APP.state.isPlayingArchive = true;
@@ -724,18 +710,13 @@
                 document.getElementById('liveIndicator').classList.add('hidden');
                 document.querySelectorAll('.archive-list-row').forEach(el => el.classList.remove('playing'));
 
-                this.widget.load(key, true).then(() => {
-                    setTimeout(() => {
-                        this.widget.getIsPaused().then(isPaused => {
-                            if (isPaused) {
-                                UI.updatePlayerInfo("READY / CLICK PLAY", title);
-                            }
-                        });
-                        this.widget.getDuration().then(d => this.trackDuration = d);
-                    }, 500);
-                }).catch(() => {
-                    UI.updatePlayerInfo("ERROR LOADING", title);
-                    this.updatePlayIcon(false);
+                this.widget.load(url, {
+                    auto_play: true,
+                    callback: () => {
+                        setTimeout(() => {
+                            this.widget.getDuration(d => this.trackDuration = d);
+                        }, 500);
+                    }
                 });
             },
 
@@ -754,68 +735,58 @@
             startProgressLoop() {
                 if (this.progressInterval) clearInterval(this.progressInterval);
 
-                // Get both display elements
                 const timeDisplay = document.getElementById('timeDisplay');
-                const mobileTimeDisplay = document.getElementById('mobileTimeDisplay'); // <--- NEW
-
+                const mobileTimeDisplay = document.getElementById('mobileTimeDisplay');
                 const revolverTrack = document.getElementById('revolverTrack');
                 const desktopFill = document.getElementById('desktopProgressFill');
 
-                // Activate desktop bar style
                 document.getElementById('desktopProgressTrack').classList.add('active');
 
                 this.progressInterval = setInterval(() => {
                     if (!this.widget || !APP.state.isPlayingArchive) return;
-
-                    // Don't update UI if user is dragging the revolver
                     if (APP.state.isDragging) return;
 
-                    Promise.all([this.widget.getPosition(), this.widget.getDuration()]).then(([pos, dur]) => {
-                        if (!dur) return;
-                        this.trackDuration = dur;
-                        const percent = (pos / dur) * 100;
+                    this.widget.getPosition((pos) => {
+                        this.widget.getDuration((dur) => {
+                            this.trackDuration = dur;
+                            if (!dur) return;
 
-                        // Update Mobile Revolver (Moving Background)
-                        if (revolverTrack) {
-                            const bgOffset = percent * -5;
-                            revolverTrack.style.backgroundPosition = `${bgOffset}px center`;
-                        }
+                            const percent = (pos / dur) * 100;
 
-                        // Update Desktop Bar (Filling Bar)
-                        if (desktopFill) desktopFill.style.width = `${percent}%`;
+                            if (revolverTrack) {
+                                const bgOffset = percent * -5;
+                                revolverTrack.style.backgroundPosition = `${bgOffset}px center`;
+                            }
 
-                        // Update Time Strings
-                        const timeString = `${this.formatTime(pos)} / ${this.formatTime(dur)}`;
+                            if (desktopFill) desktopFill.style.width = `${percent}%`;
 
-                        // Update Desktop
-                        if (timeDisplay) timeDisplay.innerText = timeString;
-
-                        // Update Mobile (New)
-                        if (mobileTimeDisplay) mobileTimeDisplay.innerText = timeString;
+                            const timeString = `${this.formatTime(pos / 1000)} / ${this.formatTime(dur / 1000)}`;
+                            if (timeDisplay) timeDisplay.innerText = timeString;
+                            if (mobileTimeDisplay) mobileTimeDisplay.innerText = timeString;
+                        });
                     });
                 }, 1000);
             },
 
             seek(e) {
-                // Desktop Click Seek
                 if (!this.widget || !APP.state.isPlayingArchive) return;
                 const rect = e.currentTarget.getBoundingClientRect();
                 const percent = (e.clientX - rect.left) / rect.width;
-                this.widget.getDuration().then(dur => {
-                    this.widget.seek(dur * percent);
+
+                this.widget.getDuration((dur) => {
+                    this.widget.seekTo(dur * percent);
                     const pctString = `${percent * 100}%`;
                     const desktopFill = document.getElementById('desktopProgressFill');
                     if (desktopFill) desktopFill.style.width = pctString;
                 });
             },
 
-            // New Method for Mobile Drag Seek
-            seekToTime(seconds) {
-                if (this.widget) this.widget.seek(seconds);
+            seekToTime(ms) {
+                if (this.widget) this.widget.seekTo(ms);
             },
 
             setVolume(val) {
-                if (this.widget) this.widget.setVolume(parseFloat(val));
+                if (this.widget) this.widget.setVolume(parseFloat(val) * 100);
             },
 
             formatTime(seconds) {
@@ -826,12 +797,65 @@
             }
         };
 
+        const Archive = {
+            init() {
+                const searchInput = document.getElementById('archiveSearch');
+                if (searchInput) searchInput.addEventListener('keyup', this.filter.bind(this));
+            },
+
+            async fetch() {
+                const container = document.getElementById('archive-container');
+                // Proxy URL for RSS2JSON
+                const feedUrl = `https://feeds.soundcloud.com/users/soundcloud:users:${CONFIG.soundcloudUserId}/sounds.rss`;
+                const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
+
+                try {
+                    const response = await fetch(proxyUrl);
+                    if (!response.ok) throw new Error('API Error');
+                    const data = await response.json();
+
+                    container.innerHTML = '';
+
+                    if (data.status !== 'ok' || !data.items) {
+                        container.innerHTML = `<div class="py-12 text-center text-xs uppercase opacity-50">
+                            Could not load feed. Check User ID in Config.
+                        </div>`;
+                        return;
+                    }
+
+                    data.items.forEach(show => {
+                        const dateStr = show.pubDate.split(' ')[0];
+                        const row = document.createElement('div');
+                        row.className = "archive-list-row group";
+                        row.innerHTML = `<div class="col-date text-emerald-500/80">${dateStr}</div>
+                                         <div class="col-artist text-white group-hover:text-black">${show.title}</div>
+                                         <div class="col-play"><span class="play-icon group-hover:opacity-100">PLAY ▶</span></div>`;
+
+                        row.addEventListener('click', () => Player.loadTrack(show.link, show.title));
+                        container.appendChild(row);
+                    });
+                    APP.state.archiveLoaded = true;
+                } catch (error) {
+                    console.error(error);
+                    container.innerHTML = '<div class="py-12 text-center text-xs uppercase text-red-500">Error connecting to SoundCloud.</div>';
+                }
+            },
+
+            filter() {
+                const filter = document.getElementById('archiveSearch').value.toUpperCase();
+                const rows = document.getElementById('archive-container').getElementsByClassName('archive-list-row');
+                for (let i = 0; i < rows.length; i++) {
+                    const txtValue = rows[i].textContent || rows[i].innerText;
+                    rows[i].style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? "flex" : "none";
+                }
+            }
+        };
+
         const Schedule = {
             init() {
                 setInterval(this.updateStatus.bind(this), 1000);
                 this.updateStatus();
             },
-
             getNextShowTime(currentTime) {
                 const msInTwoWeeks = 14 * 24 * 60 * 60 * 1000;
                 const elapsed = currentTime.getTime() - CONFIG.anchorDate.getTime();
@@ -841,7 +865,6 @@
                 if (currentTime > showEndTime) target = new Date(target.getTime() + msInTwoWeeks);
                 return target;
             },
-
             updateStatus() {
                 const now = new Date();
                 const nycTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
@@ -867,146 +890,37 @@
             }
         };
 
-        const Archive = {
-            init() {
-                const searchInput = document.getElementById('archiveSearch');
-                if (searchInput) searchInput.addEventListener('keyup', this.filter.bind(this));
-            },
-
-            async fetch() {
-                const container = document.getElementById('archive-container');
-                const apiUrl = `https://api.mixcloud.com/${CONFIG.mixcloudUser}/cloudcasts/?limit=100`;
-                try {
-                    const response = await fetch(apiUrl);
-                    if (!response.ok) throw new Error('API Error');
-                    const data = await response.json();
-                    const filteredShows = data.data.filter(show => show.name.toLowerCase().includes('bogadh'));
-                    container.innerHTML = '';
-
-                    if (filteredShows.length === 0) {
-                        container.innerHTML = '<div class="py-12 text-center text-xs uppercase opacity-50">No "Bogadh" records found.</div>';
-                        return;
-                    }
-
-                    filteredShows.forEach(show => {
-                        const dateObj = new Date(show.created_time);
-                        const formattedDate = dateObj.toISOString().split('T')[0];
-                        const row = document.createElement('div');
-                        row.className = "archive-list-row group";
-                        row.innerHTML = `<div class="col-date text-emerald-500/80">${formattedDate}</div>
-                                         <div class="col-artist text-white group-hover:text-black">${show.name}</div>
-                                         <div class="col-play"><span class="play-icon group-hover:opacity-100">PLAY ▶</span></div>`;
-                        row.addEventListener('click', () => Player.loadTrack(show.key, show.name));
-                        container.appendChild(row);
-                    });
-                    APP.state.archiveLoaded = true;
-                } catch (error) {
-                    container.innerHTML = '<div class="py-12 text-center text-xs uppercase text-red-500">Error connecting to archive.</div>';
-                }
-            },
-
-            filter() {
-                const filter = document.getElementById('archiveSearch').value.toUpperCase();
-                const rows = document.getElementById('archive-container').getElementsByClassName('archive-list-row');
-                for (let i = 0; i < rows.length; i++) {
-                    const txtValue = rows[i].textContent || rows[i].innerText;
-                    rows[i].style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? "flex" : "none";
-                }
-            }
-        };
-
         const UI = {
             bindEvents() {
                 document.getElementById('nav-logo').addEventListener('click', () => this.switchView('home'));
                 document.getElementById('nav-schedule').addEventListener('click', () => this.switchView('home'));
                 document.getElementById('nav-archive').addEventListener('click', () => this.switchView('archive'));
-
                 document.getElementById('masterPlayBtn').addEventListener('click', () => Player.toggleGlobalPlay());
 
-                // Desktop Scrubber (Click)
                 const deskScrubber = document.getElementById('desktopProgressTrack');
                 if (deskScrubber) deskScrubber.addEventListener('click', (e) => Player.seek(e));
 
-                // --- Mobile Revolver Scrubber (Drag/Swipe) ---
                 const revScrubber = document.getElementById('revolverScrubber');
-                const revTrack = document.getElementById('revolverTrack');
                 let startX = 0;
-                let currentBgPos = 0;
-                let newTime = 0;
-
                 if (revScrubber) {
                     revScrubber.addEventListener('touchstart', (e) => {
                         APP.state.isDragging = true;
                         startX = e.touches[0].clientX;
-
-                        // Get current visual offset from inline style or computed style
-                        const style = window.getComputedStyle(revTrack);
-                        const matrix = new WebKitCSSMatrix(style.transform);
-                        // We are using backgroundPosition, so parsing that is harder.
-                        // Instead, let's assume current playing time maps to start position
-                        // Or just record the X relative to touch
                     });
-
-                    revScrubber.addEventListener('touchmove', (e) => {
-                        if (!APP.state.isDragging || !Player.trackDuration) return;
-
-                        const touchCurrentX = e.touches[0].clientX;
-                        const deltaX = startX - touchCurrentX; // Drag Left (Positive) = Forward Time
-
-                        // Sensitivity: 1px drag = 2 seconds of audio (Adjust as needed)
-                        // This allows fine scrubbing
-                        const timeShift = deltaX * 2;
-
-                        // Get current position from widget (roughly) or use saved state
-                        // For smoothness, we just calculate the Visual Shift first
-                        // But we need the Base Time. 
-
-                        // Easier Logic: 
-                        // Just map the delta to a visual shift immediately,
-                        // And calculate the target time relative to where we started.
-
-                        // Let's assume we started dragging at current Widget Position
-                        Player.widget.getPosition().then(currentPos => {
-                            newTime = Math.max(0, Math.min(Player.trackDuration, currentPos + timeShift));
-
-                            // Update Visuals immediately
-                            const percent = (newTime / Player.trackDuration) * 100;
-                            const bgOffset = percent * -5;
-                            revTrack.style.backgroundPosition = `${bgOffset}px center`;
-                        });
-
-                        // Reset startX to avoid compounding acceleration? 
-                        // No, keeping startX and calculating total delta from start is smoother.
-                        // But relying on async widget.getPosition inside touchmove is laggy.
-
-                        // Better Approach:
-                        // We need current time in state. 
-                        // Since we don't have it synced perfectly, let's just create a visual effect
-                        // and jump on release.
-                    });
-
-                    // Simplified Mobile Logic for Responsiveness
-                    revScrubber.addEventListener('touchmove', (e) => {
-                        // Just prevent scrolling
-                        e.preventDefault();
-                    });
-
+                    revScrubber.addEventListener('touchmove', (e) => e.preventDefault());
                     revScrubber.addEventListener('touchend', (e) => {
                         APP.state.isDragging = false;
                         const endX = e.changedTouches[0].clientX;
                         const totalDelta = startX - endX;
+                        // Sensitivity: 1px = 2s = 2000ms
+                        const seekMs = totalDelta * 2000;
 
-                        // Sensitivity: Dragging half screen (150px) = 5 minutes (300s)
-                        // 1px = 2s
-                        const seekSeconds = totalDelta * 2;
-
-                        Player.widget.getPosition().then(pos => {
-                            const dest = Math.max(0, Math.min(Player.trackDuration, pos + seekSeconds));
+                        Player.widget.getPosition((pos) => {
+                            const dest = Math.max(0, Math.min(Player.trackDuration, pos + seekMs));
                             Player.seekToTime(dest);
                         });
                     });
                 }
-
 
                 const volControl = document.getElementById('volumeControl');
                 document.getElementById('volumeBtn').addEventListener('click', (e) => {
@@ -1014,16 +928,13 @@
                     volControl.classList.toggle('active');
                 });
                 document.getElementById('volumeSlider').addEventListener('input', (e) => Player.setVolume(e.target.value));
-
                 window.addEventListener('click', (e) => {
                     if (!volControl.contains(e.target)) volControl.classList.remove('active');
                 });
-
                 window.addEventListener('popstate', () => {
                     const view = window.location.hash.replace('#', '') || 'home';
                     this.switchView(view, false);
                 });
-
                 if (window.location.hash) this.switchView(window.location.hash.replace('#', ''));
             },
 
@@ -1093,7 +1004,6 @@
                 this.initMarquee();
                 this.initCanvas();
             },
-
             initMarquee() {
                 const container = document.getElementById('marqueeContainer');
                 const content = document.getElementById('marqueeContent');
@@ -1114,13 +1024,11 @@
                 window.addEventListener('mousemove', (e) => { if (isDragging) { tickerPos += e.clientX - startX; startX = e.clientX; } });
                 window.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; container.style.cursor = 'grab'; } });
             },
-
             initCanvas() {
                 const canvas = document.getElementById('pixelCanvas');
                 const ctx = canvas.getContext('2d');
                 let width, height, pixels = [];
                 const cellSize = 12;
-
                 const getTargetCenter = () => {
                     const targetBox = document.querySelector('#home-view .lofi-border');
                     if (targetBox && targetBox.offsetParent !== null) {
@@ -1129,7 +1037,6 @@
                     }
                     return { x: -1000, y: -1000, active: false };
                 };
-
                 const setup = () => {
                     width = window.innerWidth;
                     height = window.innerHeight;
@@ -1148,7 +1055,6 @@
                         }
                     }
                 };
-
                 const draw = () => {
                     ctx.clearRect(0, 0, width, height);
                     const now = Date.now();
