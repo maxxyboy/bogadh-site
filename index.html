@@ -460,8 +460,7 @@
 
     <div class="marquee-container" id="marqueeContainer">
         <div class="marquee-content" id="marqueeContent">
-            LIVE ON NEWTOWN RADIO: BOGADH WITH MAX REBO • EVERY SECOND TUESDAY 18:00-20:00 EST • NEXT BROADCAST: FEB 24
-            • LIVE ON NEWTOWN RADIO: BOGADH WITH MAX REBO • EVERY SECOND TUESDAY 18:00-20:00 EST • NEXT BROADCAST: FEB 24 •
+            <!-- Populated dynamically from UPCOMING_BROADCASTS -->
         </div>
     </div>
 
@@ -490,26 +489,8 @@
             </div>
             <section class="max-w-6xl mx-auto px-6 py-20 border-t border-white/10">
                 <h2 class="text-2xl font-black italic mb-12 uppercase tracking-tight">Upcoming Broadcasts</h2>
-                <div class="space-y-2">
-        
-
-                    <div
-                        class="flex justify-between items-center p-4 border border-white/5 hover:border-[#009a44] transition-all cursor-pointer text-xs uppercase font-bold">
-                        <div class="flex gap-8 items-center">
-                            <span class="text-emerald-500 w-16">FEB 24</span>
-                            <span>MAX REBO & CAILÍN LOFA @ BOGADH</span>
-                        </div>
-                        <span class="opacity-40">18:00 — 20:00 EST</span>
-                    </div>
-
-                    <div
-                        class="flex justify-between items-center p-4 border border-white/5 hover:border-[#009a44] transition-all cursor-pointer text-xs uppercase font-bold">
-                        <div class="flex gap-8 items-center">
-                            <span class="text-emerald-500 w-16">MAR 10</span>
-                            <span>MAX REBO & MOLE @ BOGADH</span>
-                        </div>
-                        <span class="opacity-40">18:00 — 20:00 EST</span>
-                    </div>
+                <div class="space-y-2" id="upcoming-broadcasts-list">
+                    <!-- Populated dynamically from UPCOMING_BROADCASTS -->
                 </div>
             </section>
         </section>
@@ -622,17 +603,48 @@
 
     <script>
         /**
+         * ============================================================
+         *  UPCOMING BROADCASTS
+         *  ✏️  THIS IS THE ONLY PLACE YOU NEED TO EDIT TO ADD SHOWS
+         *
+         *  Each entry:
+         *    date:    "MMM DD"  — display label (e.g. "MAR 24")
+         *    isoDate: "YYYY-MM-DD" — used to sort & find next upcoming
+         *    title:   Show name as you want it to appear
+         *    time:    Time string shown on the right (e.g. "18:00 — 20:00 EST")
+         * ============================================================
+         */
+        const UPCOMING_BROADCASTS = [
+            {
+                date: "FEB 24",
+                isoDate: "2026-02-24",
+                title: "MAX REBO & CAILÍN LOFA @ BOGADH",
+                time: "18:00 — 20:00 EST"
+            },
+            {
+                date: "MAR 10",
+                isoDate: "2026-03-10",
+                title: "MAX REBO & MOLE @ BOGADH",
+                time: "18:00 — 20:00 EST"
+            },
+            // ➕ Add more shows below — copy one of the blocks above
+            // {
+            //     date: "MAR 24",
+            //     isoDate: "2026-03-24",
+            //     title: "MAX REBO & GUEST @ BOGADH",
+            //     time: "18:00 — 20:00 EST"
+            // },
+        ];
+
+
+        /**
          * BOGADH RADIO APPLICATION
          * ------------------------
          * Migrated to SoundCloud Engine (RSS Method)
          */
 
         const CONFIG = {
-            // !!! IMPORTANT: YOU MUST FIND YOUR NUMERIC USER ID !!!
-            // 1. Go to your SoundCloud profile.
-            // 2. Click Share on the profile -> Click Embed.
-            // 3. Look for code like: users%2F123456789. The number is your ID.
-            soundcloudUserId: '1663555616', // <--- REPLACE THIS WITH REAL ID
+            soundcloudUserId: '1663555616',
             liveUrl: 'https://newtownradio.com/',
             anchorDate: new Date("2026-01-13T18:00:00-05:00")
         };
@@ -652,13 +664,78 @@
                 Schedule.init();
                 Archive.init();
                 UI.bindEvents();
+                Broadcasts.init();
+            }
+        };
+
+        // ============================================================
+        //  Broadcasts — renders the upcoming list & populates marquee
+        // ============================================================
+        const Broadcasts = {
+            getNextBroadcast() {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                // Sort ascending and find the first one that hasn't passed yet
+                const sorted = [...UPCOMING_BROADCASTS].sort((a, b) => new Date(a.isoDate) - new Date(b.isoDate));
+                return sorted.find(b => new Date(b.isoDate) >= today) || null;
+            },
+
+            init() {
+                this.renderList();
+                this.renderMarquee();
+            },
+
+            renderList() {
+                const container = document.getElementById('upcoming-broadcasts-list');
+                if (!container) return;
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                // Sort ascending
+                const sorted = [...UPCOMING_BROADCASTS].sort((a, b) => new Date(a.isoDate) - new Date(b.isoDate));
+
+                if (sorted.length === 0) {
+                    container.innerHTML = `<div class="text-xs uppercase opacity-40 py-4">No upcoming broadcasts scheduled.</div>`;
+                    return;
+                }
+
+                container.innerHTML = sorted.map(broadcast => {
+                    const isPast = new Date(broadcast.isoDate) < today;
+                    return `
+                        <div class="flex justify-between items-center p-4 border border-white/5 hover:border-[#009a44] transition-all cursor-pointer text-xs uppercase font-bold ${isPast ? 'opacity-30' : ''}">
+                            <div class="flex gap-8 items-center">
+                                <span class="text-emerald-500 w-16">${broadcast.date}</span>
+                                <span>${broadcast.title}</span>
+                            </div>
+                            <span class="opacity-40">${broadcast.time}</span>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            renderMarquee() {
+                const content = document.getElementById('marqueeContent');
+                if (!content) return;
+
+                const next = this.getNextBroadcast();
+                let marqueeText;
+
+                if (next) {
+                    marqueeText = `LIVE ON NEWTOWN RADIO: BOGADH WITH MAX REBO • EVERY SECOND TUESDAY 18:00-20:00 EST • NEXT BROADCAST: ${next.date} — ${next.title} •`;
+                } else {
+                    marqueeText = `LIVE ON NEWTOWN RADIO: BOGADH WITH MAX REBO • EVERY SECOND TUESDAY 18:00-20:00 EST • STAY TUNED FOR UPCOMING BROADCASTS •`;
+                }
+
+                // Double the text so the marquee loops seamlessly
+                content.textContent = marqueeText + ' ' + marqueeText;
             }
         };
 
         const Player = {
             widget: null,
             progressInterval: null,
-            trackDuration: 0, // In Milliseconds for SoundCloud
+            trackDuration: 0,
 
             init() {
                 const iframe = document.createElement('iframe');
@@ -666,7 +743,6 @@
                 iframe.style.width = "100%";
                 iframe.style.height = "166px";
                 iframe.setAttribute('allow', 'autoplay');
-                // Initial Load (User Profile)
                 iframe.src = `https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/users/${CONFIG.soundcloudUserId}&color=%23009a44&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=false`;
 
                 document.getElementById('widget-mount').appendChild(iframe);
@@ -814,7 +890,6 @@
 
             async fetch() {
                 const container = document.getElementById('archive-container');
-                // Proxy URL for RSS2JSON
                 const feedUrl = `https://feeds.soundcloud.com/users/soundcloud:users:${CONFIG.soundcloudUserId}/sounds.rss`;
                 const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
 
@@ -921,7 +996,6 @@
                         APP.state.isDragging = false;
                         const endX = e.changedTouches[0].clientX;
                         const totalDelta = startX - endX;
-                        // Sensitivity: 1px = 2s = 2000ms
                         const seekMs = totalDelta * 2000;
 
                         Player.widget.getPosition((pos) => {
@@ -979,7 +1053,10 @@
                     els.status.classList.add('text-emerald-500');
                     els.indicator.classList.replace('hidden', 'flex');
                 } else {
-                    els.headerStatus.innerText = `Next Broadcast: ${timeStr}`;
+                    // Pull next broadcast from the array for the countdown label
+                    const next = Broadcasts.getNextBroadcast();
+                    const nextLabel = next ? next.date : timeStr;
+                    els.headerStatus.innerText = `Next Broadcast: ${nextLabel}`;
                     els.headerIndicator.classList.add('hidden');
                     els.btn.innerText = "LISTEN TO ARCHIVE";
                     els.btn.onclick = () => this.switchView('archive');
@@ -1019,7 +1096,7 @@
                 let tickerPos = 0;
                 let isDragging = false;
                 let startX = 0;
-                content.innerHTML += " " + content.innerHTML;
+                // NOTE: content is already doubled by Broadcasts.renderMarquee()
                 const updateTicker = () => {
                     if (!isDragging) {
                         tickerPos -= 1.5;
