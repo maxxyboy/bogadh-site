@@ -147,13 +147,8 @@
         }
 
         @keyframes scan {
-            from {
-                bottom: 100%;
-            }
-
-            to {
-                bottom: -10%;
-            }
+            from { bottom: 100%; }
+            to { bottom: -10%; }
         }
 
         .lofi-border {
@@ -202,21 +197,14 @@
             font-weight: bold;
         }
 
-        .col-date {
-            width: 20%;
-        }
-
+        .col-date { width: 20%; }
         .col-artist {
             width: 60%;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
-        .col-play {
-            width: 20%;
-            text-align: right;
-        }
+        .col-play { width: 20%; text-align: right; }
 
         .play-icon {
             opacity: 0;
@@ -224,9 +212,7 @@
             font-size: 10px;
         }
 
-        .archive-list-row:hover .play-icon {
-            opacity: 1;
-        }
+        .archive-list-row:hover .play-icon { opacity: 1; }
 
         /* Player Bar */
         .player-bar {
@@ -257,9 +243,7 @@
             transition: transform 0.1s;
         }
 
-        .play-btn:active {
-            transform: scale(0.95);
-        }
+        .play-btn:active { transform: scale(0.95); }
 
         /* --- DESKTOP Progress Bar --- */
         .progress-wrapper {
@@ -275,9 +259,7 @@
         }
 
         .player-bar:hover .progress-wrapper,
-        .progress-wrapper.active {
-            opacity: 1;
-        }
+        .progress-wrapper.active { opacity: 1; }
 
         .progress-track {
             position: relative;
@@ -318,10 +300,7 @@
             display: none;
         }
 
-        .progress-wrapper.active .progress-knob {
-            display: block;
-        }
-
+        .progress-wrapper.active .progress-knob { display: block; }
 
         /* --- MOBILE Revolver Scrubber --- */
         .revolver-wrapper {
@@ -341,9 +320,7 @@
             -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
         }
 
-        .revolver-wrapper:active {
-            cursor: grabbing;
-        }
+        .revolver-wrapper:active { cursor: grabbing; }
 
         .revolver-track {
             position: absolute;
@@ -385,10 +362,7 @@
         }
 
         @media (max-width: 768px) {
-            .player-bar {
-                padding: 0 10px;
-                gap: 10px;
-            }
+            .player-bar { padding: 0 10px; gap: 10px; }
         }
 
         /* Widget Mount */
@@ -405,13 +379,8 @@
 
         /* Marquee Animation */
         @keyframes marquee {
-            0% {
-                transform: translateX(100%);
-            }
-
-            100% {
-                transform: translateX(-100%);
-            }
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
         }
 
         .mobile-marquee-container {
@@ -444,14 +413,11 @@
         <div class="scanline"></div>
     </div>
 
-    <nav
-        class="relative z-50 flex justify-between items-center p-6 border-b border-white/10 bg-black/50 backdrop-blur-sm">
+    <nav class="relative z-50 flex justify-between items-center p-6 border-b border-white/10 bg-black/50 backdrop-blur-sm">
         <div class="flex items-center gap-4 cursor-pointer relative z-10" id="nav-logo">
             <div class="w-10 h-10 bg-[#009a44] flex items-center justify-center font-bold text-black text-xl">B</div>
-            <span class="text-xl font-bold tracking-tighter">BOGADH <span
-                    class="text-xs ml-2 opacity-50 hidden md:inline">NYC / IRE</span></span>
+            <span class="text-xl font-bold tracking-tighter">BOGADH <span class="text-xs ml-2 opacity-50 hidden md:inline">NYC / IRE</span></span>
         </div>
-
         <div class="flex gap-6 text-xs uppercase tracking-widest font-bold relative z-10">
             <button id="nav-schedule" class="hover:text-[#009a44] transition-colors">Schedule</button>
             <button id="nav-archive" class="hover:text-[#009a44] transition-colors">Archive</button>
@@ -467,8 +433,7 @@
     <main class="relative z-20">
         <section id="home-view" class="view-section active">
             <div class="min-h-[70vh] flex flex-col items-center justify-center px-6 text-center">
-                <div
-                    class="mb-4 text-emerald-500 text-sm flex items-center gap-2 relative z-30 font-bold uppercase tracking-widest">
+                <div class="mb-4 text-emerald-500 text-sm flex items-center gap-2 relative z-30 font-bold uppercase tracking-widest">
                     <span id="headerIndicator" class="w-2 h-2 rounded-full bg-red-500 hidden animate-pulse"></span>
                     <span id="headerStatus">Checking Status...</span>
                 </div>
@@ -545,7 +510,6 @@
                     00:00 / 00:00
                 </div>
             </div>
-
             <div class="revolver-wrapper" id="revolverScrubber">
                 <div class="revolver-track" id="revolverTrack"></div>
                 <div class="revolver-needle-container"></div>
@@ -561,7 +525,6 @@
                     Bogadh with Max Rebo
                 </span>
             </div>
-
             <div id="desktopProgressTrack" class="progress-wrapper hidden md:flex">
                 <div class="progress-track">
                     <div class="progress-line-bg"></div>
@@ -596,8 +559,7 @@
         </div>
     </div>
 
-    <footer
-        class="p-10 border-t border-white/10 text-[10px] text-center opacity-40 uppercase tracking-[0.3em] relative z-30">
+    <footer class="p-10 border-t border-white/10 text-[10px] text-center opacity-40 uppercase tracking-[0.3em] relative z-30">
         Bogadh Radio © 2026 • Brooklyn • Dublin • Moving Together
     </footer>
 
@@ -615,49 +577,48 @@
          * ============================================================
          */
         const UPCOMING_BROADCASTS = [
-    {
-        date: "MAR 10",
-        isoDate: "2026-03-10",
-        title: "MAX REBO & MOLE @ BOGADH",
-        time: "18:00 — 20:00 EST"
-    },
-    {
-        date: "MAR 24",
-        isoDate: "2026-03-24",
-        title: "MAX REBO & FEARGAL @ BOGADH",
-        time: "18:00 — 20:00 EST"
-    },
-    {
-        date: "APR 7",
-        isoDate: "2026-04-07",
-        title: "MAX REBO & DJ BUC-EE @ BOGADH",
-        time: "18:00 — 20:00 EST"
-    },
-    {
-        date: "APR 21",
-        isoDate: "2026-04-21",
-        title: "MAX REBO & REFLEKTA @ BOGADH",
-        time: "18:00 — 20:00 EST"
-    },
-    {
-        date: "MAY 5",
-        isoDate: "2026-05-05",
-        title: "MAX REBO & ??? @ BOGADH",
-        time: "18:00 — 20:00 EST"
-    },
-    {
-        date: "MAY 19",
-        isoDate: "2026-05-19",
-        title: "MAX REBO & AYEM @ BOGADH",
-        time: "18:00 — 20:00 EST"
-    },
-];
+            {
+                date: "MAR 10",
+                isoDate: "2026-03-10",
+                title: "MAX REBO & MOLE @ BOGADH",
+                time: "18:00 — 20:00 EST"
+            },
+            {
+                date: "MAR 24",
+                isoDate: "2026-03-24",
+                title: "MAX REBO & FEARGAL @ BOGADH",
+                time: "18:00 — 20:00 EST"
+            },
+            {
+                date: "APR 7",
+                isoDate: "2026-04-07",
+                title: "MAX REBO & DJ BUC-EE @ BOGADH",
+                time: "18:00 — 20:00 EST"
+            },
+            {
+                date: "APR 21",
+                isoDate: "2026-04-21",
+                title: "MAX REBO & REFLEKTA @ BOGADH",
+                time: "18:00 — 20:00 EST"
+            },
+            {
+                date: "MAY 5",
+                isoDate: "2026-05-05",
+                title: "MAX REBO & ??? @ BOGADH",
+                time: "18:00 — 20:00 EST"
+            },
+            {
+                date: "MAY 19",
+                isoDate: "2026-05-19",
+                title: "MAX REBO & AYEM @ BOGADH",
+                time: "18:00 — 20:00 EST"
+            },
+            // ➕ Add more shows below — copy one of the blocks above
+        ];
 
 
         /**
          * BOGADH RADIO APPLICATION
-         * ------------------------
-         * Migrated to SoundCloud Engine (RSS Method)
          */
 
         const CONFIG = {
@@ -689,12 +650,17 @@
         //  Broadcasts — renders the upcoming list & populates marquee
         // ============================================================
         const Broadcasts = {
+            // FIX: append T12:00:00 so date parses in local time, not UTC midnight
+            // (UTC midnight = previous evening in EST, causing today's show to read as "past")
+            parseDate(isoDate) {
+                return new Date(isoDate + 'T12:00:00');
+            },
+
             getNextBroadcast() {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
-                // Sort ascending and find the first one that hasn't passed yet
-                const sorted = [...UPCOMING_BROADCASTS].sort((a, b) => new Date(a.isoDate) - new Date(b.isoDate));
-                return sorted.find(b => new Date(b.isoDate) >= today) || null;
+                const sorted = [...UPCOMING_BROADCASTS].sort((a, b) => this.parseDate(a.isoDate) - this.parseDate(b.isoDate));
+                return sorted.find(b => this.parseDate(b.isoDate) >= today) || null;
             },
 
             init() {
@@ -709,8 +675,7 @@
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
-                // Sort ascending
-                const sorted = [...UPCOMING_BROADCASTS].sort((a, b) => new Date(a.isoDate) - new Date(b.isoDate));
+                const sorted = [...UPCOMING_BROADCASTS].sort((a, b) => this.parseDate(a.isoDate) - this.parseDate(b.isoDate));
 
                 if (sorted.length === 0) {
                     container.innerHTML = `<div class="text-xs uppercase opacity-40 py-4">No upcoming broadcasts scheduled.</div>`;
@@ -718,7 +683,7 @@
                 }
 
                 container.innerHTML = sorted.map(broadcast => {
-                    const isPast = new Date(broadcast.isoDate) < today;
+                    const isPast = this.parseDate(broadcast.isoDate) < today;
                     return `
                         <div class="flex justify-between items-center p-4 border border-white/5 hover:border-[#009a44] transition-all cursor-pointer text-xs uppercase font-bold ${isPast ? 'opacity-30' : ''}">
                             <div class="flex gap-8 items-center">
@@ -744,7 +709,6 @@
                     marqueeText = `LIVE ON NEWTOWN RADIO: BOGADH WITH MAX REBO • EVERY SECOND TUESDAY 18:00-20:00 EST • STAY TUNED FOR UPCOMING BROADCASTS •`;
                 }
 
-                // Double the text so the marquee loops seamlessly
                 content.textContent = marqueeText + ' ' + marqueeText;
             }
         };
@@ -1070,7 +1034,6 @@
                     els.status.classList.add('text-emerald-500');
                     els.indicator.classList.replace('hidden', 'flex');
                 } else {
-                    // Pull next broadcast from the array for the countdown label
                     const next = Broadcasts.getNextBroadcast();
                     const nextLabel = next ? next.date : timeStr;
                     els.headerStatus.innerText = `Next Broadcast: ${nextLabel}`;
@@ -1113,7 +1076,6 @@
                 let tickerPos = 0;
                 let isDragging = false;
                 let startX = 0;
-                // NOTE: content is already doubled by Broadcasts.renderMarquee()
                 const updateTicker = () => {
                     if (!isDragging) {
                         tickerPos -= 1.5;
